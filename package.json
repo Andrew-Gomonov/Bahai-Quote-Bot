@@ -1,0 +1,27 @@
+{
+  "name": "bahai-quote-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot that sends Bahá'í quotes to users, with daily schedules, search, and admin broadcasts.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "import": "node scripts/importQuotes.js",
+    "add-admin": "node scripts/addAdmin.js",
+    "admin-web": "node src/admin.js",
+    "test": "jest"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "fuse.js": "^7.0.0",
+    "luxon": "^3.4.0",
+    "node-telegram-bot-api": "^0.61.0",
+    "sqlite3": "^5.1.6",
+    "express": "^4.19.2",
+    "express-basic-auth": "^1.2.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+} 
