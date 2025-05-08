@@ -25,14 +25,14 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    ```
 3. **Import quotes**
    Fill table `quotes` manually or via SQL:
-   ```sql
-   INSERT INTO quotes(text) VALUES ("First quote…"), ("Second quote…");
+   ```bash
+   npm run import
    ```
-4. **(Optional) Add admins**
-   ```sql
-   INSERT INTO admins(chat_id) VALUES (123456789);
+5. **(Optional) Add admins**
+   ```bash
+    npm run add-admin 123456789;
    ```
-5. **Run**
+6. **Run**
    ```bash
    npm start
    ```
