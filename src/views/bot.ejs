@@ -1,0 +1,19 @@
+<h2>Управление ботом</h2>
+<p>Статус: <strong><%= status %></strong><% if(pid){ %> (PID <%= pid %>)<% } %></p>
+<div class="btn-group mb-4">
+  <form method="POST" action="/bot/start"><button class="btn btn-success" <%= status==='running'?'disabled':'' %>>Запуск</button></form>
+  <form method="POST" action="/bot/stop"><button class="btn btn-warning" <%= status==='stopped'?'disabled':'' %>>Остановить</button></form>
+  <form method="POST" action="/bot/restart"><button class="btn btn-primary">Перезапуск</button></form>
+  <form method="POST" action="/bot/kill"><button class="btn btn-danger" <%= status==='stopped'?'disabled':'' %>>Принудительно</button></form>
+</div>
+<hr />
+<h4>Панель</h4>
+<form method="POST" action="/panel/stop" onsubmit="return confirm('Остановить веб-панель?');">
+  <button class="btn btn-outline-danger">Выключить панель</button>
+</form>
+<hr />
+<h4>BOT_TOKEN</h4>
+<form method="POST" action="/bot/update-token" class="row g-2 mb-3">
+  <div class="col"><input type="text" name="token" class="form-control" placeholder="Новый BOT_TOKEN" value="<%= currentToken %>" required></div>
+  <div class="col-auto"><button class="btn btn-secondary">Сохранить</button></div>
+</form> 
