@@ -11,7 +11,7 @@
     "admin-dev": "nodemon --ext js --watch src/admin.js --exec \"node src/admin.js\"",
     "test": "jest"
   },
-  "author": "",
+  "author": "andrei.gomonov.md@gmail.com",
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
