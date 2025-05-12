@@ -16,4 +16,12 @@
 <form method="POST" action="/bot/update-token" class="row g-2 mb-3">
   <div class="col"><input type="text" name="token" class="form-control" placeholder="Новый BOT_TOKEN" value="<%= currentToken %>" required></div>
   <div class="col-auto"><button class="btn btn-secondary">Сохранить</button></div>
+</form>
+<hr />
+<h4>OpenAI</h4>
+<form method="POST" action="/gpt/update" class="row g-2 mb-3">
+  <div class="col-12 col-md-6"><input type="text" name="api_key" class="form-control" placeholder="OPENAI_API_KEY" value="<%= openaiKey %>"></div>
+  <div class="col-6 col-md-3"><input type="text" name="model" class="form-control" placeholder="Model" value="<%= openaiModel %>"></div>
+  <div class="col-6 col-md-2"><input type="number" name="max_tokens" class="form-control" placeholder="Max" value="<%= openaiMaxTokens %>"></div>
+  <div class="col-auto"><button class="btn btn-secondary">Сохранить</button></div>
 </form> 

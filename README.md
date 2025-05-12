@@ -29,6 +29,9 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    ADMIN_PORT=3000           # admin panel port
    ADMIN_USER=admin          # HTTP auth login
    ADMIN_PASSWORD=admin      # HTTP auth password
+   OPENAI_API_KEY=sk-...     # ключ для ChatGPT (опционально, нужен для GPT рассылок)
+   OPENAI_MODEL=gpt-3.5-turbo # модель (опционально)
+   OPENAI_MAX_TOKENS=200      # лимит токенов (опционально)
    ```
 3. **Import quotes**
    Add your quotes to the database in one of two ways:
@@ -53,6 +56,26 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    npm start           # start the bot
    npm run admin-web   # (optional) launch web admin panel
    ```
+
+## Git Management
+
+Для управления git-репозиторием и версионированием используйте скрипт `git-manager.js`:
+
+```bash
+# Обновить версию (major/minor/patch)
+node scripts/git-manager.js version patch
+
+# Закоммитить и запушить изменения
+node scripts/git-manager.js push
+
+# Показать статус репозитория
+node scripts/git-manager.js status
+```
+
+Скрипт автоматически:
+- Обновляет версию в `package.json`
+- Создает коммит с тегом версии
+- Пушит изменения и теги в репозиторий
 
 ## Docker quick-start
 

@@ -52,6 +52,7 @@ function tgError(err) {
       'message is not modified',
       'message to edit not found',
       'bot was blocked by the user',
+      'terminated by other getUpdates request'
     ];
     if (ignorablePatterns.some((p) => desc.includes(p))) {
       console.warn('[TG]', desc);
@@ -76,7 +77,7 @@ process.on('SIGINT', () => {
 });
 
 function broadcastToAll(text, image=null) {
-  db.all('SELECT chat_id FROM users WHERE subscribed = 1', (err, rows) => {
+  db.all('SELECT chat_id FROM users WHERE broadcast_enabled = 1', (err, rows) => {
     if (err) return console.error(err);
     rows.forEach((u) => {
       if (image) {

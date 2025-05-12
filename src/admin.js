@@ -22,6 +22,7 @@ const { passport, isAuthenticated } = require('./auth');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const { gptGenerate } = require('./gpt'); // ChatGPT helper
 
 const envPath = path.join(__dirname, '..', '.env');
 
@@ -67,6 +68,15 @@ app.locals.version = version;
 // Middleware: передаём имя текущего пользователя во все шаблоны
 app.use((req, res, next) => {
   res.locals.currentUser = req.user ? req.user.username : null;
+  res.locals.role = req.user ? req.user.role : null;
+  next();
+});
+
+// Read-only guard for guest role: block any non-GET, non-logout actions
+app.use((req, res, next) => {
+  if (req.user && req.user.role === 'guest' && req.method !== 'GET') {
+    return res.status(403).send('Forbidden: read-only guest');
+  }
   next();
 });
 
@@ -190,28 +200,86 @@ app.get('/broadcasts', (req, res) => {
   const d = db();
   d.all('SELECT * FROM broadcasts ORDER BY (type="weekly") DESC, id DESC LIMIT 100', (err, rows) => {
     if (err) return res.status(500).send(err.message);
-    res.render('broadcasts', { title:'Рассылки', rows, pushModal: pushModalMarkup(), weeklyModal: weeklyModalMarkup(), imgModal: imgModalMarkup()});
+    res.render('broadcasts', {
+      title:'Рассылки',
+      rows,
+      pushModal: pushModalMarkup(),
+      weeklyModal: weeklyModalMarkup(),
+      dailyModal: dailyModalMarkup(),
+      imgModal: imgModalMarkup()
+    });
   });
 });
 
-app.post('/broadcasts/push', (req, res) => {
-  const { date, time, message, image } = req.body;
-  if (!(date && time && message)) return res.redirect('/broadcasts');
+app.post('/broadcasts/push', async (req, res) => {
+  const { date, time, message, image, use_gpt, gpt_prompt } = req.body;
+  if (!(date && time && (message || use_gpt))) return res.redirect('/broadcasts');
+
+  const useGpt = use_gpt ? 1 : 0;
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)';
+
+  let finalMsg = message;
+  if (useGpt) {
+    try {
+      finalMsg = await gptGenerate(prompt);
+    } catch (e) {
+      console.error('[ADMIN] GPT error:', e);
+      finalMsg = '(GPT error)';
+    }
+  }
   // Преобразуем локальное время администратора (по умолч. DEFAULT_TZ) в UTC ISO
   const localDt = DateTime.fromISO(`${date}T${time}`, { zone: DEFAULT_TZ });
   const iso = localDt.isValid ? localDt.toUTC().toISO() : `${date}T${time}:00Z`;
   const d = db();
-  d.run('INSERT INTO broadcasts(type, schedule, message, image) VALUES ("push", ?, ?, ?)', [iso, message, image || null], () => {
+  d.run('INSERT INTO broadcasts(type, schedule, message, image, use_gpt, gpt_prompt) VALUES ("push", ?, ?, ?, ?, ?)', [iso, finalMsg, image || null, useGpt, prompt], () => {
     res.redirect('/broadcasts');
   });
 });
 
-app.post('/broadcasts/weekly', (req, res) => {
-  const { day, time, message, image } = req.body;
-  if (!(day && time && message)) return res.redirect('/broadcasts');
+app.post('/broadcasts/weekly', async (req, res) => {
+  const { day, time, message, image, use_gpt, gpt_prompt } = req.body;
+  if (!(day && time && (message || use_gpt))) return res.redirect('/broadcasts');
+
+  const useGpt = use_gpt ? 1 : 0;
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)';
+
+  let finalMsg = message;
+  if (useGpt) {
+    try {
+      finalMsg = await gptGenerate(prompt);
+    } catch (e) {
+      console.error('[ADMIN] GPT error:', e);
+      finalMsg = '(GPT error)';
+    }
+  }
   const sched = `${day}|${time}`;
   const d = db();
-  d.run('INSERT INTO broadcasts(type, schedule, message, image) VALUES ("weekly", ?, ?, ?)', [sched, message, image || null], () => {
+  d.run('INSERT INTO broadcasts(type, schedule, message, image, use_gpt, gpt_prompt) VALUES ("weekly", ?, ?, ?, ?, ?)', [sched, finalMsg, image || null, useGpt, prompt], () => {
+    res.redirect('/broadcasts');
+  });
+});
+
+// Daily broadcast
+app.post('/broadcasts/daily', async (req, res) => {
+  const { time, message, image, use_gpt, gpt_prompt } = req.body;
+  if (!(time && (message || use_gpt))) return res.redirect('/broadcasts');
+
+  const useGpt = use_gpt ? 1 : 0;
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)';
+
+  let finalMsg = message;
+  if (useGpt) {
+    try {
+      finalMsg = await gptGenerate(prompt);
+    } catch (e) {
+      console.error('[ADMIN] GPT error:', e);
+      finalMsg = '(GPT error)';
+    }
+  }
+
+  const sched = time; // UTC HH:mm
+  const d = db();
+  d.run('INSERT INTO broadcasts(type, schedule, message, image, use_gpt, gpt_prompt) VALUES ("daily", ?, ?, ?, ?, ?)', [sched, finalMsg, image || null, useGpt, prompt], () => {
     res.redirect('/broadcasts');
   });
 });
@@ -276,7 +344,15 @@ function stopBot(force = false) {
 
 app.get('/bot', (req, res) => {
   const status = botStatus();
-  res.render('bot', { title:'Бот', status, pid: botProcess ? botProcess.pid : null, currentToken: process.env.BOT_TOKEN || '' });
+  res.render('bot', {
+    title:'Бот',
+    status,
+    pid: botProcess ? botProcess.pid : null,
+    currentToken: process.env.BOT_TOKEN || '',
+    openaiKey: process.env.OPENAI_API_KEY || '',
+    openaiModel: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    openaiMaxTokens: process.env.OPENAI_MAX_TOKENS || 200
+  });
 });
 
 app.post('/bot/start', (req, res) => {
@@ -387,7 +463,12 @@ function pushModalMarkup() {
             <div class="col"><input type="date" name="date" class="form-control" required></div>
             <div class="col"><input type="time" name="time" class="form-control" required></div>
           </div>
-          <textarea name="message" class="form-control mb-2" rows="4" required placeholder="Сообщение..."></textarea>
+          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="pushUseGpt" name="use_gpt">
+            <label class="form-check-label" for="pushUseGpt">Сгенерировать текст через ChatGPT</label>
+          </div>
+          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
           <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
         </div>
         <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
@@ -413,7 +494,38 @@ function weeklyModalMarkup() {
             </div>
             <div class="col"><input type="time" name="time" class="form-control" required></div>
           </div>
-          <textarea name="message" class="form-control mb-2" rows="4" required placeholder="Сообщение..."></textarea>
+          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="weeklyUseGpt" name="use_gpt">
+            <label class="form-check-label" for="weeklyUseGpt">Сгенерировать текст через ChatGPT (каждую неделю будет новый)</label>
+          </div>
+          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
+          <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>`;
+}
+
+function dailyModalMarkup() {
+  return `
+<div class="modal fade" id="newDailyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/broadcasts/daily">
+        <div class="modal-header"><h5 class="modal-title">Новая Daily рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col"><input type="time" name="time" class="form-control" required></div>
+          </div>
+          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="dailyUseGpt" name="use_gpt">
+            <label class="form-check-label" for="dailyUseGpt">Сгенерировать текст через ChatGPT (каждый день будет новый)</label>
+          </div>
+          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
           <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
         </div>
         <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
@@ -448,9 +560,9 @@ app.get('/admins', (req, res) => {
   const d = db();
   d.all('SELECT chat_id FROM admins WHERE chat_id IS NOT NULL ORDER BY chat_id', (err, tgRows) => {
     if (err) return res.status(500).send(err.message);
-    d.all('SELECT username FROM web_admins ORDER BY username', (e2, webRows) => {
+    d.all('SELECT username, role FROM web_admins ORDER BY username', (e2, webRows) => {
       if (e2) return res.status(500).send(e2.message);
-      res.render('admins', { title:'Админы', tgAdmins: tgRows, webAdmins: webRows });
+      res.render('admins', { title:'Админы', tgAdmins: tgRows, webAdmins: webRows, isSuper: req.user?.role==='super' });
     });
   });
 });
@@ -473,20 +585,52 @@ app.post('/admins/delete/:id', (req, res) => {
 });
 
 // Добавление/обновление веб-админа
-app.post('/admins/web', (req, res) => {
-  const { username, password } = req.body;
+function requireSuper(req, res, next) {
+  if (req.user && req.user.role === 'super') return next();
+  return res.status(403).send('Forbidden');
+}
+
+app.post('/admins/web', requireSuper, (req, res) => {
+  const { username, password, role } = req.body;
   if (!(username && password)) return res.redirect('/admins');
   const d = db();
   const saltRounds = 10;
   bcrypt.hash(password, saltRounds, (err, hash) => {
     if (err) return res.status(500).send(err.message);
-    d.run('INSERT OR REPLACE INTO web_admins(username, password) VALUES (?, ?)', [username, hash], () => {
+    const r = ['super','admin','guest'].includes(role)? role : 'admin';
+    d.run('INSERT OR REPLACE INTO web_admins(username, password, role) VALUES (?, ?, ?)', [username, hash, r], () => {
       res.redirect('/admins');
     });
   });
 });
 
-app.post('/admins/delete-web/:username', (req, res) => {
+// Обновление существующего веб-админа
+app.post('/admins/web-update/:old', requireSuper, (req, res) => {
+  const old = req.params.old;
+  const { username: newUser, password, role } = req.body;
+  if (!newUser) return res.redirect('/admins');
+  const d = db();
+  const newRole = ['admin','guest','super'].includes(role)? role : 'admin';
+
+  function finish(hash) {
+    if (hash) {
+      d.run('UPDATE web_admins SET username = ?, role = ?, password = ? WHERE username = ?', [newUser, newRole, hash, old], () => res.redirect('/admins'));
+    } else {
+      d.run('UPDATE web_admins SET username = ?, role = ? WHERE username = ?', [newUser, newRole, old], () => res.redirect('/admins'));
+    }
+  }
+
+  if (password) {
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) return res.status(500).send(err.message);
+      finish(hash);
+    });
+  } else {
+    finish();
+  }
+});
+
+app.post('/admins/delete-web/:username', requireSuper, (req, res) => {
   const username = req.params.username;
   const d = db();
   d.run('DELETE FROM web_admins WHERE username = ?', [username], () => {
@@ -546,6 +690,74 @@ app.post('/bot/update-token', (req, res) => {
 
   console.log('[ADMIN] BOT_TOKEN updated via panel');
   res.redirect('/bot');
+});
+
+function updateEnvVar(key, value) {
+  let envContent = '';
+  if (fs.existsSync(envPath)) envContent = fs.readFileSync(envPath, 'utf8');
+  const lines = envContent.split(/\r?\n/);
+  let updated = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(key + '=')) {
+      lines[i] = `${key}=${value}`;
+      updated = true;
+      break;
+    }
+  }
+  if (!updated) lines.push(`${key}=${value}`);
+  fs.writeFileSync(envPath, lines.filter(Boolean).join('\n'));
+  process.env[key] = value;
+}
+
+// Add new route for GPT settings
+app.post('/gpt/update', (req, res) => {
+  const { api_key, model, max_tokens } = req.body;
+  if (api_key) updateEnvVar('OPENAI_API_KEY', api_key.trim());
+  if (model) updateEnvVar('OPENAI_MODEL', model.trim());
+  if (max_tokens) updateEnvVar('OPENAI_MAX_TOKENS', String(max_tokens).trim());
+  console.log('[ADMIN] OpenAI settings updated');
+  res.redirect('/bot');
+});
+
+// ================= USERS =================
+app.get('/users', (req, res) => {
+  const d = db();
+  d.all('SELECT * FROM users ORDER BY chat_id LIMIT 1000', (err, rows) => {
+    if (err) return res.status(500).send(err.message);
+    res.render('users', { title:'Пользователи', rows });
+  });
+});
+
+// Add user manually
+app.post('/users', (req, res) => {
+  const chatId = Number(req.body.chat_id);
+  const tz = (req.body.timezone || DEFAULT_TZ);
+  const time = (req.body.daily_time || DEFAULT_DAILY_TIME);
+  if (!chatId) return res.redirect('/users');
+  const d = db();
+  d.run('INSERT OR IGNORE INTO users(chat_id, timezone, daily_time) VALUES (?, ?, ?)', [chatId, tz, time], () => {
+    res.redirect('/users');
+  });
+});
+
+// Update user
+app.post('/users/update/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const { timezone, daily_time, subscribed } = req.body;
+  const sub = subscribed ? 1 : 0;
+  const d = db();
+  d.run('UPDATE users SET timezone = ?, daily_time = ?, subscribed = ? WHERE chat_id = ?', [timezone, daily_time, sub, id], () => {
+    res.redirect('/users');
+  });
+});
+
+// Delete user
+app.post('/users/delete/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const d = db();
+  d.run('DELETE FROM users WHERE chat_id = ?', [id], () => {
+    res.redirect('/users');
+  });
 });
 
 if (process.env.NODE_ENV !== 'test') {

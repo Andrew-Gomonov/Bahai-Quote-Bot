@@ -1,21 +1,25 @@
 <h2 class="mb-3">Рассылки</h2>
 <div class="d-flex justify-content-end mb-3">
   <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#newPushModal">+ New PUSH</button>
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newWeeklyModal">+ New Weekly</button>
+  <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#newWeeklyModal">+ New Weekly</button>
+  <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#newDailyModal">+ New Daily</button>
 </div>
 <table id="bcastsTbl" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
-  <thead><tr><th></th><th>ID</th><th>Тип</th><th>Расписание</th><th>Img</th><th>Сообщение</th><th>Действия</th></tr></thead>
+  <thead><tr><th class="d-none">prio</th><th></th><th>ID</th><th>Тип</th><th>Расписание</th><th>Img</th><th>Сообщение</th><th>Действия</th></tr></thead>
   <tbody>
   <% rows.forEach(function(b){ %>
+    <% const prio = b.type==='weekly'?2:(b.type==='daily'?1:0); %>
     <tr data-id="<%= b.id %>" data-type="<%= b.type %>" data-schedule="<%= b.schedule %>" data-message="<%= encodeURIComponent(b.message) %>" data-image="<%= encodeURIComponent(b.image || '') %>" style="cursor: pointer;">
-      <td><%= b.sent? '✅' : (b.type==='weekly'?'🔄':'⏰') %></td>
+      <td class="d-none"><%= prio %></td>
+      <td><%= b.sent? '✅' : (b.type==='weekly'?'🔄':(b.type==='daily'?'📅':'⏰')) %></td>
       <td>#<%= b.id %></td>
       <td><%= b.type %></td>
       <td><%= b.schedule %></td>
       <td class="text-center"><button class="btn btn-sm btn-outline-secondary img-btn" data-id="<%= b.id %>" data-img="<%= encodeURIComponent(b.image||'') %>"><%= b.image? '📷' : '+' %></button></td>
       <td><%= b.message.length>100? b.message.slice(0,100)+'…': b.message %></td>
       <td>
-        <div class="btn-group btn-group-sm">
+        <div class="btn-group btn-group-sm actions">
+          <button type="button" class="btn btn-outline-secondary view-bcast" data-id="<%= b.id %>" data-type="<%= b.type %>" data-schedule="<%= b.schedule %>" data-message="<%= encodeURIComponent(b.message) %>" data-image="<%= encodeURIComponent(b.image || '') %>">👁️</button>
           <button type="button" class="btn btn-outline-primary edit-bcast" data-id="<%= b.id %>" data-msg="<%= encodeURIComponent(b.message) %>">✏️</button>
           <form method="POST" action="/broadcasts/delete/<%= b.id %>" onsubmit="return confirm('Удалить рассылку?');">
             <button class="btn btn-danger">🗑️</button>
@@ -31,6 +35,8 @@
 <%- pushModal %>
 <!-- New Weekly modal -->
 <%- weeklyModal %>
+<!-- New Daily modal -->
+<%- dailyModal %>
 <!-- Image modal -->
 <%- imgModal %>
 
@@ -98,49 +104,13 @@
  document.addEventListener('click',function(e){const btn=e.target.closest('.img-btn');if(!btn)return;const id=btn.dataset.id;const img=decodeURIComponent(btn.dataset.img||'');const form=document.getElementById('imgForm');form.action='/broadcasts/update-image/'+id;form.image.value=img;const open=document.getElementById('imgOpen');if(img&&img.startsWith('http')){open.href=img;open.style.display='inline-block';}else{open.style.display='none';}const modal=new bootstrap.Modal(document.getElementById('imgModal'));modal.show();});
  // edit broadcast handler
  document.addEventListener('click',function(e){const btn=e.target.closest('.edit-bcast');if(!btn)return;const id=btn.dataset.id;const msg=decodeURIComponent(btn.dataset.msg||'');const form=document.getElementById('editBcastForm');form.action='/broadcasts/edit/'+id;form.message.value=msg;const modal=new bootstrap.Modal(document.getElementById('editBcastModal'));modal.show();});
- // View broadcast on row click
- document.addEventListener('click', function(e) {
-   const row = e.target.closest('tr[data-id]');
-   if (!row) return;
-   // игнорируем клики по интерактивным элементам (кнопки, ссылки, формы)
-   if (e.target.closest('button, a, form')) return;
-   
-   const type = row.dataset.type;
-   const schedule = row.dataset.schedule;
-   const message = decodeURIComponent(row.dataset.message || '');
-   const image = decodeURIComponent(row.dataset.image || '');
-   
-   document.getElementById('viewType').textContent = type;
-   document.getElementById('viewSchedule').textContent = schedule;
-   document.getElementById('viewMessage').textContent = message;
-   
-   const imgContainer = document.getElementById('viewImageContainer');
-   const img = document.getElementById('viewImage');
-   const imgLink = document.getElementById('viewImageLink');
-   
-   if (image && image.startsWith('http')) {
-     img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f8f9fa"/><text x="50" y="50" font-family="Arial" font-size="12" fill="%236c757d" text-anchor="middle" dominant-baseline="middle">Превью</text></svg>';
-     imgLink.href = image;
-     imgContainer.style.display = 'block';
-     
-     // Загружаем превью только после показа модалки
-     const modal = new bootstrap.Modal(document.getElementById('viewBcastModal'));
-     modal.show();
-     
-     // Пробуем загрузить превью
-     const tempImg = new Image();
-     tempImg.onload = function() {
-       img.src = image;
-     };
-     tempImg.onerror = function() {
-       img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f8f9fa"/><text x="50" y="50" font-family="Arial" font-size="12" fill="%23dc3545" text-anchor="middle" dominant-baseline="middle">Ошибка загрузки</text></svg>';
-     };
-     tempImg.src = image;
-   } else {
-     imgContainer.style.display = 'none';
-     const modal = new bootstrap.Modal(document.getElementById('viewBcastModal'));
-     modal.show();
-   }
+ // explicit view button
+ document.addEventListener('click', function(e){
+   const btn=e.target.closest('.view-bcast');if(!btn)return;
+   const type=btn.dataset.type;const schedule=btn.dataset.schedule;const message=decodeURIComponent(btn.dataset.message||'');const image=decodeURIComponent(btn.dataset.image||'');
+   document.getElementById('viewType').textContent=type;document.getElementById('viewSchedule').textContent=schedule;document.getElementById('viewMessage').textContent=message;
+   const imgContainer=document.getElementById('viewImageContainer');const img=document.getElementById('viewImage');const imgLink=document.getElementById('viewImageLink');if(image&&image.startsWith('http')){img.src='';imgLink.href=image;imgContainer.style.display='block';img.src=image;}else{imgContainer.style.display='none';}
+   new bootstrap.Modal(document.getElementById('viewBcastModal')).show();
  });
- (function dt(){if(window.$&&$.fn.dataTable){$('#bcastsTbl').DataTable({pageLength:20,order:[[1,'desc']],responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});} else {setTimeout(dt,50);}})();
+ (function dt(){if(window.$&&$.fn.dataTable){$('#bcastsTbl').DataTable({pageLength:20,order:[[0,'desc'],[2,'desc']],columnDefs:[{targets:0,visible:false}],responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});} else {setTimeout(dt,50);}})();
 </script> 

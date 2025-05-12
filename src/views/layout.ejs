@@ -88,6 +88,7 @@
           <li class="nav-item"><a class="nav-link" href="/">Статистика</a></li>
           <li class="nav-item"><a class="nav-link" href="/quotes">Цитаты</a></li>
           <li class="nav-item"><a class="nav-link" href="/broadcasts">Рассылки</a></li>
+          <li class="nav-item"><a class="nav-link" href="/users">Пользователи</a></li>
           <li class="nav-item"><a class="nav-link" href="/bot">Бот</a></li>
           <li class="nav-item"><a class="nav-link" href="/admins">Админы</a></li>
         </ul>
@@ -95,7 +96,7 @@
         <div class="dropdown">
           <a class="nav-link dropdown-toggle text-light d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <span class="d-lg-none">👤</span>
-            <span class="d-none d-lg-inline"><%= currentUser %></span>
+            <span class="d-none d-lg-inline"><%= currentUser %><% if(role==='guest'){ %> (guest)<% } %></span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
             <li><a class="dropdown-item" href="/change-credentials">Изменить имя / пароль</a></li>

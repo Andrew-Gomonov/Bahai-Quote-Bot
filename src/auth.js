@@ -9,7 +9,10 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((username, done) => {
-  done(null, { username });
+  db.get('SELECT role FROM web_admins WHERE username = ?', [username], (err, row) => {
+    if (err) return done(err);
+    done(null, { username, role: row?.role || 'admin' });
+  });
 });
 
 // Настройка локальной стратегии
@@ -35,7 +38,7 @@ passport.use(new LocalStrategy(
         // Сравниваем хеш в базе с вводом
         bcrypt.compare(password, row.password, (err2, same) => {
           if (err2) return done(err2);
-          if (same) return done(null, { username });
+          if (same) return done(null, { username, role: row.role || 'admin' });
           return done(null, false, { message: 'Неверное имя пользователя или пароль' });
         });
         return; // ждём compare

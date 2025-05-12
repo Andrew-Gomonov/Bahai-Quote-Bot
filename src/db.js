@@ -19,6 +19,8 @@ function initDatabase() {
       timezone TEXT NOT NULL DEFAULT '${DEFAULT_TZ}',
       daily_time TEXT NOT NULL DEFAULT '${DEFAULT_DAILY_TIME}',
       subscribed INTEGER NOT NULL DEFAULT 1,
+      daily_enabled INTEGER NOT NULL DEFAULT 1,
+      broadcast_enabled INTEGER NOT NULL DEFAULT 1,
       last_quote_time INTEGER,
       last_daily_sent TEXT
     );`);
@@ -29,7 +31,8 @@ function initDatabase() {
 
     db.run(`CREATE TABLE IF NOT EXISTS web_admins (
       username TEXT PRIMARY KEY,
-      password TEXT NOT NULL
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin'
     );`);
 
     db.run(`CREATE TABLE IF NOT EXISTS broadcasts (
@@ -38,6 +41,8 @@ function initDatabase() {
       schedule TEXT NOT NULL,         -- ISO date for push, 'day|time' for weekly
       message TEXT NOT NULL,
       image TEXT,
+      use_gpt INTEGER NOT NULL DEFAULT 0,
+      gpt_prompt TEXT,
       sent INTEGER NOT NULL DEFAULT 0,
       last_sent_date TEXT             -- for weekly to avoid double-sending
     );`);
@@ -48,6 +53,14 @@ function initDatabase() {
       const hasImage = rows.some((r) => r.name === 'image');
       if (!hasImage) {
         db.run('ALTER TABLE broadcasts ADD COLUMN image TEXT');
+      }
+      const hasUseGpt = rows.some((r) => r.name === 'use_gpt');
+      if (!hasUseGpt) {
+        db.run('ALTER TABLE broadcasts ADD COLUMN use_gpt INTEGER NOT NULL DEFAULT 0');
+      }
+      const hasGptPrompt = rows.some((r) => r.name === 'gpt_prompt');
+      if (!hasGptPrompt) {
+        db.run('ALTER TABLE broadcasts ADD COLUMN gpt_prompt TEXT');
       }
     });
 
@@ -63,6 +76,30 @@ function initDatabase() {
             db.run('INSERT OR IGNORE INTO web_admins(username, password) VALUES (?, ?)', [r.username, r.password]);
           });
         });
+      }
+    });
+
+    db.all('PRAGMA table_info(web_admins)', (err, rows) => {
+      if (err) return;
+      const hasRole = rows.some(r=>r.name==='role');
+      if (!hasRole) {
+        db.run("ALTER TABLE web_admins ADD COLUMN role TEXT NOT NULL DEFAULT 'admin'", () => {
+          // elevate env ADMIN_USER to super
+          const superUser = process.env.ADMIN_USER || 'admin';
+          db.run('UPDATE web_admins SET role = "super" WHERE username = ?', [superUser]);
+        });
+      }
+    });
+
+    db.all('PRAGMA table_info(users)', (err, rows) => {
+      if (err) return;
+      const hasDailyEnabled = rows.some((r) => r.name === 'daily_enabled');
+      const hasBroadcastEnabled = rows.some((r) => r.name === 'broadcast_enabled');
+      if (!hasDailyEnabled) {
+        db.run('ALTER TABLE users ADD COLUMN daily_enabled INTEGER NOT NULL DEFAULT 1');
+      }
+      if (!hasBroadcastEnabled) {
+        db.run('ALTER TABLE users ADD COLUMN broadcast_enabled INTEGER NOT NULL DEFAULT 1');
       }
     });
   });
