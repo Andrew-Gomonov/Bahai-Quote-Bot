@@ -7,8 +7,11 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
 * Daily personal quote at user-defined time & timezone (Luxon).
 * On-demand quote via /quote and inline "🔄 Ещё" button (30 s cooldown).
 * /find <text> – fuzzy search (Fuse.js).
-* Admin broadcasts: /push and /weekly (text + optional image).
-* Simple admin web-panel (Express + Bootstrap) for statistics, quote & broadcast management (HTTP Basic Auth).
+* Admin broadcasts: /push (one-time), /weekly (recurring), and /daily (daily at specific time).
+* GPT-powered broadcasts with customizable prompts.
+* Image support in broadcasts.
+* Simple admin web-panel (Express + Bootstrap) for statistics, quote & broadcast management.
+* Role-based access control (super/admin/guest) for web panel.
 * SQLite (single `bot.db` file), zero external services.
 * Docker & docker-compose ready.
 
@@ -27,9 +30,9 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    DB_PATH=bot.db            # path to SQLite file
    COOLDOWN_SEC=30           # /quote cooldown in seconds
    ADMIN_PORT=3000           # admin panel port
-   OPENAI_API_KEY=sk-...     # ключ для ChatGPT (опционально, нужен для GPT рассылок)
-   OPENAI_MODEL=gpt-4.1-nano # модель (опционально)
-   OPENAI_MAX_TOKENS=200      # лимит токенов (опционально)
+   OPENAI_API_KEY=sk-...     # OpenAI API key for GPT broadcasts
+   OPENAI_MODEL=gpt-4.1-nano # OpenAI model
+   OPENAI_MAX_TOKENS=200     # max tokens per GPT response
    ```
 3. **Import quotes**
    Add your quotes to the database in one of two ways:
@@ -43,11 +46,19 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
       ```
 4. **(Optional) Add admins**
    ```bash
+   # Add Telegram admin
    npm run add-admin 123456789   # Telegram id
+   
+   # Add web panel admin
+   npm run add-admin --web username password
    ```
    or via SQL:
    ```sql
+   -- Telegram admin
    INSERT INTO admins(chat_id) VALUES (123456789);
+   
+   -- Web panel admin (password should be bcrypt hashed)
+   INSERT INTO web_admins(username, password, role) VALUES ('username', 'hashed_password', 'admin');
    ```
 5. **Run**
    ```bash
@@ -55,25 +66,27 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    npm run admin-web   # (optional) launch web admin panel
    ```
 
-## Git Management
+## User Commands
 
-Для управления git-репозиторием и версионированием используйте скрипт `git-manager.js`:
+* `/start` – subscribe to daily quotes and broadcasts
+* `/stop` – unsubscribe from everything
+* `/quote [N]` – get random or specific quote
+* `/time HH:MM` – set daily quote time
+* `/randomtime` – set random daily time
+* `/daily on|off` – toggle daily quotes
+* `/broadcast on|off` – toggle broadcasts
+* `/tz Area/City` – change timezone
+* `/find text` – search quotes
+* `/count` – show total quotes
+* `/help` – show this help
 
-```bash
-# Обновить версию (major/minor/patch)
-node scripts/git-manager.js version patch
+## Admin Commands
 
-# Закоммитить и запушить изменения
-node scripts/git-manager.js push
-
-# Показать статус репозитория
-node scripts/git-manager.js status
-```
-
-Скрипт автоматически:
-- Обновляет версию в `package.json`
-- Создает коммит с тегом версии
-- Пушит изменения и теги в репозиторий
+* `/push YYYY-MM-DD HH:MM text` – schedule one-time broadcast
+* `/weekly <1-7> HH:MM text` – schedule weekly broadcast
+* `/blist [N]` – list last N broadcasts (default 20)
+* `/bdel ID` – delete broadcast
+* `/bedit ID text` – edit broadcast text
 
 ## Docker quick-start
 
