@@ -27,8 +27,6 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    DB_PATH=bot.db            # path to SQLite file
    COOLDOWN_SEC=30           # /quote cooldown in seconds
    ADMIN_PORT=3000           # admin panel port
-   ADMIN_USER=admin          # HTTP auth login
-   ADMIN_PASSWORD=admin      # HTTP auth password
    OPENAI_API_KEY=sk-...     # ключ для ChatGPT (опционально, нужен для GPT рассылок)
    OPENAI_MODEL=gpt-4.1-nano # модель (опционально)
    OPENAI_MAX_TOKENS=200      # лимит токенов (опционально)
