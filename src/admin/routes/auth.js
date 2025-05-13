@@ -22,9 +22,18 @@ router.post('/login', passport.authenticate('local', {
   failureFlash: true
 }));
 
-// Logout
+// Logout page - GET
 router.get('/logout', (req, res) => {
-  req.logout(() => {
+  if (!req.isAuthenticated()) { // Если не залогинен, нечего и выходить
+    return res.redirect('/login');
+  }
+  res.render('logout', { title: 'Выход из системы' });
+});
+
+// Logout - POST
+router.post('/logout', (req, res, next) => {
+  req.logout((err) => {
+    if (err) { return next(err); } // Передаем ошибку дальше, если она есть
     res.redirect('/login');
   });
 });

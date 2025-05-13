@@ -1,28 +1,60 @@
 <%# views/login.ejs %>
 <div class="row justify-content-center">
-  <div class="col-md-6 col-lg-4">
-    <div class="card mt-5">
-      <div class="card-body">
-        <h2 class="card-title text-center mb-4">Вход в панель управления</h2>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-          <div class="alert alert-danger" role="alert">
-            <%= error %>
+  <div class="col-md-6 col-lg-5 col-xl-4">
+    <div class="card shadow-lg border-0 rounded-lg mt-5">
+      <div class="card-header bg-primary text-white text-center py-4">
+        <h2 class="card-title mb-0 fs-3"><i class="bi bi-box-arrow-in-right me-2"></i>Вход в панель</h2>
+      </div>
+      <div class="card-body p-4 p-md-5">
+        <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div><%= error %></div>
           </div>
         <% } %>
 
         <form method="POST" action="/login">
           <div class="mb-3">
-            <label for="username" class="form-label">Имя пользователя</label>
-            <input type="text" class="form-control" id="username" name="username" required>
+            <label for="username" class="form-label fs-5"><i class="bi bi-person-fill me-1"></i>Имя пользователя</label>
+            <input type="text" class="form-control form-control-lg" id="username" name="username" required autofocus>
           </div>
-          <div class="mb-3">
-            <label for="password" class="form-label">Пароль</label>
-            <input type="password" class="form-control" id="password" name="password" required>
+          <div class="mb-4">
+            <label for="password" class="form-label fs-5"><i class="bi bi-lock-fill me-1"></i>Пароль</label>
+            <div class="input-group">
+              <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+              <span class="input-group-text password-toggle-btn" title="Показать/скрыть пароль"><i class="bi bi-eye-slash-fill"></i></span>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary w-100">Войти</button>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-door-open-fill me-1"></i>Войти</button>
+          </div>
         </form>
       </div>
     </div>
+    <div class="text-center mt-3">
+      <small class="text-muted">Bahá'í Quote Bot v<%= version %></small>
+    </div>
   </div>
-</div> 
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Password visibility toggle for login page
+  const togglePasswordButton = document.querySelector('#password + .password-toggle-btn');
+  if (togglePasswordButton) {
+    togglePasswordButton.addEventListener('click', function () {
+      const passwordInput = document.getElementById('password');
+      const icon = this.querySelector('i');
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('bi-eye-slash-fill');
+        icon.classList.add('bi-eye-fill');
+      } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('bi-eye-fill');
+        icon.classList.add('bi-eye-slash-fill');
+      }
+    });
+  }
+});
+</script> 
