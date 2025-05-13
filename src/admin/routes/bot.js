@@ -38,13 +38,22 @@ function stopBot(force = false) {
 // Bot dashboard
 router.get('/bot', (req, res) => {
   res.render('bot', {
-    title: 'Бот',
+    title: 'Управление Ботом',
     status: botStatus(),
     pid: botProcess ? botProcess.pid : null,
+    currentPage: 'status'
+  });
+});
+
+// Bot Settings page
+router.get('/bot/settings', (req, res) => {
+  res.render('bot-settings', {
+    title: 'Настройки Бота и OpenAI',
     currentToken: process.env.BOT_TOKEN || '',
     openaiKey: process.env.OPENAI_API_KEY || '',
     openaiModel: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-    openaiMaxTokens: process.env.OPENAI_MAX_TOKENS || 200
+    openaiMaxTokens: process.env.OPENAI_MAX_TOKENS || 200,
+    currentPage: 'settings'
   });
 });
 
@@ -72,7 +81,7 @@ router.post('/bot/restart', (req, res) => {
 // Update bot token in .env
 router.post('/bot/update-token', (req, res) => {
   const newToken = (req.body.token || '').trim();
-  if (!newToken) return res.redirect('/bot');
+  if (!newToken) return res.redirect('/bot/settings');
 
   let envContent = '';
   if (fs.existsSync(envPath)) envContent = fs.readFileSync(envPath, 'utf8');
@@ -91,7 +100,7 @@ router.post('/bot/update-token', (req, res) => {
   fs.writeFileSync(envPath, lines.join('\n'));
   process.env.BOT_TOKEN = newToken;
   console.log('[ADMIN] BOT_TOKEN updated');
-  res.redirect('/bot');
+  res.redirect('/bot/settings');
 });
 
 function updateEnvVar(key, value) {
@@ -118,7 +127,7 @@ router.post('/gpt/update', (req, res) => {
   if (model) updateEnvVar('OPENAI_MODEL', model.trim());
   if (max_tokens) updateEnvVar('OPENAI_MAX_TOKENS', String(max_tokens).trim());
   console.log('[ADMIN] OpenAI settings updated');
-  res.redirect('/bot');
+  res.redirect('/bot/settings');
 });
 
 // Stop admin panel itself
