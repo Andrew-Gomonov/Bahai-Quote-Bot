@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { db: sharedDb, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('../db');
+const { db: sharedDb, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('../../core/db');
 
 function db() { return sharedDb; }
 

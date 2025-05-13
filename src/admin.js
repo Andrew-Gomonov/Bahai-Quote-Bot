@@ -13,14 +13,14 @@ const fs = require('fs');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
 const { version } = require('../package.json');
-const { db: sharedDb, initDatabase } = require('./db');
-const { passport, isAuthenticated } = require('./auth');
-const quotesRouter = require('./routes/quotes');
-const broadcastsRouter = require('./routes/broadcasts');
-const usersRouter = require('./routes/users');
-const adminsRouter = require('./routes/admins');
-const authRouter = require('./routes/auth');
-const botRouter = require('./routes/bot');
+const { db: sharedDb, initDatabase } = require('./core/db');
+const { passport, isAuthenticated } = require('./core/auth');
+const quotesRouter = require('./admin/routes/quotes');
+const broadcastsRouter = require('./admin/routes/broadcasts');
+const usersRouter = require('./admin/routes/users');
+const adminsRouter = require('./admin/routes/admins');
+const authRouter = require('./admin/routes/auth');
+const botRouter = require('./admin/routes/bot');
 
 const envPath = path.join(__dirname, '..', '.env');
 
@@ -31,7 +31,7 @@ const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin';
 const app = express();
 
 // Static assets (logo, etc.)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'admin/public')));
 
 // Настройка сессий
 app.use(session({
@@ -59,7 +59,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'admin/views'));
 app.use(expressLayouts);          
 app.set('layout', 'layout');      // общий шаблон
 

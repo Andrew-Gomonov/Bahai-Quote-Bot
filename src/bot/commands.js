@@ -1,5 +1,5 @@
 const { DateTime } = require('luxon');
-const { DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('./db');
+const { DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('../core/db'); // ИЗМЕНЕНО
 const {
   getRandomQuote,
   getQuoteById,
@@ -7,7 +7,7 @@ const {
   searchQuotes,
   formatQuote,
   getQuotesCount,
-} = require('./quotes');
+} = require('./quotes'); // ИЗМЕНЕНО (пока так, потом quotes.js тоже переедет)
 
 function registerCommands(bot, db, broadcastToAll, tgError) {
   // helper

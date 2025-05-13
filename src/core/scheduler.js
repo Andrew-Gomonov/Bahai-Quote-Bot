@@ -1,6 +1,6 @@
 const { DateTime } = require('luxon');
-const { gptGenerate } = require('./gpt');
-const { DEFAULT_TZ } = require('./db');
+const { gptGenerate } = require('../bot/gpt'); // ИЗМЕНЕНО
+const { DEFAULT_TZ } = require('./db'); // ИЗМЕНЕНО (пока так, потом db.js тоже переедет)
 
 async function startScheduler(db, bot, getRandomQuote, broadcastToAll) {
   async function handleBroadcast(b) {

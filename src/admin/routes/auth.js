@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { passport } = require('../auth');
+const { passport } = require('../../core/auth');
 
 // Login page
 router.get('/login', (req, res) => {

@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const { DateTime } = require('luxon');
-const { db: sharedDb, DEFAULT_TZ } = require('../db');
-const { gptGenerate } = require('../gpt');
+const { db: sharedDb, DEFAULT_TZ } = require('../../core/db');
+const { gptGenerate } = require('../../bot/gpt');
 
 // Helper to access shared sqlite instance
 function db() {

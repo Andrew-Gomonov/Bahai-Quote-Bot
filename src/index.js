@@ -4,10 +4,10 @@ const TelegramBot = require('node-telegram-bot-api');
 const { DateTime } = require('luxon');
 const Bluebird = require('bluebird');
 const { version } = require('../package.json');
-const { db, initDatabase: dbInit, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('./db');
-const { startScheduler } = require('./scheduler');
-const { loadQuotes, getRandomQuote, getQuoteById, searchQuotes, sendQuote, formatQuote, getQuotesCount } = require('./quotes');
-const { registerCommands } = require('./commands');
+const { db, initDatabase: dbInit, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('./core/db');
+const { startScheduler } = require('./core/scheduler');
+const { loadQuotes, getRandomQuote, getQuoteById, searchQuotes, sendQuote, formatQuote, getQuotesCount } = require('./bot/quotes');
+const { registerCommands } = require('./bot/commands');
 
 // ================== CONFIG ==================
 const TOKEN = process.env.BOT_TOKEN;

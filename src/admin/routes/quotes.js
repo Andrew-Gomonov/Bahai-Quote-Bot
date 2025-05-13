@@ -5,7 +5,7 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const fs = require('fs');
 
-const { db: sharedDb } = require('../db');
+const { db: sharedDb } = require('../../core/db');
 
 // Helpers
 function db() {

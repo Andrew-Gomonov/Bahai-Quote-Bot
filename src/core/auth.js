@@ -1,7 +1,7 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
-const { db } = require('./db');
+const { db } = require('./db'); // Путь останется таким же, так как auth.js и db.js будут в core
 
 // Настройка сериализации пользователя
 passport.serializeUser((user, done) => {

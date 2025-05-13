@@ -4,5 +4,5 @@ uploads/
 .DS_Store
 *.log
 bot.db
-session.db
+sessions.db
 package-lock.json

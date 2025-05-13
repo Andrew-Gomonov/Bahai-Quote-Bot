@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const bcrypt = require('bcrypt');
-const { db: sharedDb } = require('../db');
+const { db: sharedDb } = require('../../core/db');
 
 function db() { return sharedDb; }
 
