@@ -3,3 +3,6 @@ node_modules/
 uploads/
 .DS_Store
 *.log
+bot.db
+session.db
+package-lock.json
