@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
   const d = db();
   d.all('SELECT * FROM users ORDER BY chat_id LIMIT 1000', (err, rows) => {
     if (err) return res.status(500).send(err.message);
-    res.render('users', { title: 'Пользователи', rows });
+    res.render('users', { title: 'Пользователи', rows, DEFAULT_TZ, DEFAULT_DAILY_TIME });
   });
 });
 

@@ -3,88 +3,106 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title || 'Admin' %></title>
+  <title><%= title || 'Admin Panel' %></title>
   <link rel="icon" type="image/png" href="/logo.png" sizes="any">
   <link rel="shortcut icon" type="image/png" href="/logo.png" />
-  <!-- Bootswatch Cosmo theme & DataTables CSS -->
+  <!-- Bootswatch Cosmo theme (kept for base styles) & DataTables CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
-    /* Fix occasional loss of DataTables paging bootstrap styles */
-    .dataTables_wrapper .dataTables_paginate ul.pagination {
-      margin: 0;
+    body {
+      padding-top: 4.5rem; /* Adjusted for fixed navbar height */
+      background-color: #f8f9fa !important; /* Light gray background */
     }
-    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item .page-link {
-      padding: .4rem .75rem;
+    .navbar-brand img {
+      height: 32px; /* Slightly smaller logo */
+      width: auto;
     }
-    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item.disabled .page-link {
-      color: #6c757d !important;
-      background-color: #fff;
-      border-color: #dee2e6;
+    .main-content-wrapper {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding: 2rem; /* More padding inside the card */
+      background-color: #ffffff;
+      border-radius: .5rem; /* Softer border radius */
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Softer shadow */
     }
-    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item.active .page-link {
-      color: #fff !important;
-      background-color: #0d6efd;
-      border-color: #0d6efd;
+    .nav-link.active {
+      font-weight: bold;
+      color: #0d6efd !important; /* Bootstrap primary color for active link */
     }
+    .navbar-nav .nav-link .bi {
+      margin-right: 0.3rem;
+    }
+    .dropdown-item .bi {
+      margin-right: 0.5rem;
+    }
+    /* Fix occasional loss of DataTables paging bootstrap styles (kept from original) */
+    .dataTables_wrapper .dataTables_paginate ul.pagination { margin: 0; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item .page-link { padding: .4rem .75rem; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item.disabled .page-link { color: #6c757d !important; background-color: #fff; border-color: #dee2e6; }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.page-item.active .page-link { color: #fff !important; background-color: #0d6efd; border-color: #0d6efd; }
 
-    /* Mobile optimizations */
+    /* Mobile optimizations (kept and slightly adjusted from original) */
     @media (max-width: 768px) {
-      .container {
-        padding-left: 10px;
-        padding-right: 10px;
-      }
-      
-      .navbar-brand {
-        font-size: 1.1rem;
-      }
-      
-      .table {
-        font-size: 0.9rem;
-      }
-      
-      .btn {
-        padding: 0.375rem 0.5rem;
-        font-size: 0.9rem;
-      }
-      
-      .form-control {
-        font-size: 0.9rem;
-      }
-      
-      .card {
-        margin-bottom: 1rem;
-      }
-      
-      .dataTables_wrapper .dataTables_length,
-      .dataTables_wrapper .dataTables_filter {
-        text-align: left;
-        margin-bottom: 0.5rem;
-      }
-      
-      .dataTables_wrapper .dataTables_info {
-        padding-top: 0.5rem;
-      }
-      
-      .dropdown-menu {
-        font-size: 0.9rem;
-      }
+      .container, .main-content-wrapper { padding-left: 15px; padding-right: 15px; }
+      .main-content-wrapper { padding: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;}
+      .navbar-brand { font-size: 1.1rem; }
+      .table { font-size: 0.9rem; }
+      .btn { padding: 0.375rem 0.5rem; font-size: 0.9rem; }
+      .form-control { font-size: 0.9rem; }
+      .card { margin-bottom: 1rem; }
+      .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter { text-align: left; margin-bottom: 0.5rem; }
+      .dataTables_wrapper .dataTables_info { padding-top: 0.5rem; }
+      .dropdown-menu { font-size: 0.9rem; }
+    }
+    .table td { word-break: break-word; }
+
+    /* Password strength meter styles */
+    .password-strength-meter {
+      height: 8px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+      overflow: hidden; /* Ensures the inner bar respects border radius */
+    }
+    .password-strength-meter-bar {
+      height: 100%;
+      width: 0%; /* Initial width */
+      border-radius: 4px;
+      transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    }
+    .password-strength-text {
+      font-size: 0.8rem;
+      text-align: right;
+    }
+    .strength-weak {
+      background-color: #dc3545; /* Red */
+    }
+    .strength-medium {
+      background-color: #fd7e14; /* Orange */
+    }
+    .strength-good {
+      background-color: #ffc107; /* Yellow */
+    }
+    .strength-strong {
+      background-color: #198754; /* Green */
     }
 
-    .table td {
-      word-break: break-word;
+    /* Style for password toggle button */
+    .password-toggle-btn {
+      cursor: pointer;
     }
-
-    .navbar-brand img { height:36px; width:auto; }
   </style>
 </head>
-<body class="pt-5 pb-4">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+<body class="pb-4">
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center" href="/">
-        <img src="/logo.png" alt="logo" height="36" class="me-2">
+        <img src="/logo_bg.png" alt="logo" class="me-2">
         Bahá'í Quote Bot
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBar" aria-controls="navBar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,30 +110,33 @@
       </button>
       <div class="collapse navbar-collapse" id="navBar">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="/">Статистика</a></li>
-          <li class="nav-item"><a class="nav-link" href="/quotes">Цитаты</a></li>
-          <li class="nav-item"><a class="nav-link" href="/broadcasts">Рассылки</a></li>
-          <li class="nav-item"><a class="nav-link" href="/users">Пользователи</a></li>
-          <li class="nav-item"><a class="nav-link" href="/bot">Бот</a></li>
-          <li class="nav-item"><a class="nav-link" href="/admins">Админы</a></li>
+          <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-bar-chart-line-fill"></i>Статистика</a></li>
+          <li class="nav-item"><a class="nav-link" href="/quotes"><i class="bi bi-blockquote-left"></i>Цитаты</a></li>
+          <li class="nav-item"><a class="nav-link" href="/broadcasts"><i class="bi bi-megaphone-fill"></i>Рассылки</a></li>
+          <li class="nav-item"><a class="nav-link" href="/users"><i class="bi bi-people-fill"></i>Пользователи</a></li>
+          <li class="nav-item"><a class="nav-link" href="/bot"><i class="bi bi-robot"></i>Бот</a></li>
+          <li class="nav-item"><a class="nav-link" href="/admins"><i class="bi bi-shield-lock-fill"></i>Админы</a></li>
         </ul>
-        <span class="navbar-text text-light me-3 d-none d-lg-inline">v<%= version %></span>
+        <span class="navbar-text text-muted me-3 d-none d-lg-inline">v<%= version %></span>
         <div class="dropdown">
-          <a class="nav-link dropdown-toggle text-light d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="d-lg-none">👤</span>
+          <a class="nav-link dropdown-toggle text-secondary d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1 fs-5"></i>
             <span class="d-none d-lg-inline"><%= currentUser %><% if(role==='guest'){ %> (guest)<% } %></span>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-            <li><a class="dropdown-item" href="/change-credentials">Изменить имя / пароль</a></li>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="userMenu">
+            <li><a class="dropdown-item" href="/change-credentials"><i class="bi bi-key-fill"></i>Изменить имя / пароль</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/logout">Выйти</a></li>
+            <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right"></i>Выйти</a></li>
           </ul>
         </div>
       </div>
     </div>
   </nav>
+
   <div class="container">
-    <%- body %>
+    <div class="main-content-wrapper">
+      <%- body %>
+    </div>
   </div>
 
   <!-- jQuery / Bootstrap / DataTables JS -->
@@ -125,5 +146,17 @@
   <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+  <script>
+    // Highlight active nav link
+    document.addEventListener("DOMContentLoaded", function() {
+      const links = document.querySelectorAll('#navBar .nav-link');
+      const currentPath = window.location.pathname;
+      links.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
 </body>
 </html> 

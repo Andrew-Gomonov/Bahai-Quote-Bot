@@ -1,7 +1,8 @@
-<h2 class="mb-3 d-flex justify-content-between align-items-center">Цитаты
+<h2 class="mb-4 d-flex justify-content-between align-items-center">
+  <span><i class="bi bi-blockquote-left me-2"></i>Цитаты</span>
   <div>
-    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importQuotesModal">📥 Импорт</button>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addQuoteModal">+ Добавить</button>
+    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#importQuotesModal"><i class="bi bi-upload me-1"></i> Импорт</button>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addQuoteModal"><i class="bi bi-plus-circle-fill me-1"></i> Добавить</button>
   </div>
 </h2>
 <table id="quotesTbl" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
@@ -12,13 +13,13 @@
   <% rows.forEach(function(r){ %>
     <tr>
       <td>#<%= r.id %></td>
-      <td><%= r.text.length>120 ? r.text.slice(0,120)+'…' : r.text %></td>
-      <td>
+      <td><%= r.text.length>100 ? r.text.slice(0,100)+'…' : r.text %></td>
+      <td class="text-center">
         <div class="btn-group btn-group-sm">
-          <button type="button" class="btn btn-outline-secondary view-full" data-text="<%= encodeURIComponent(r.text) %>">Полностью</button>
-          <button type="button" class="btn btn-outline-primary edit-quote" data-id="<%= r.id %>" data-text="<%= encodeURIComponent(r.text) %>">✏️</button>
-          <form method="POST" action="/quotes/delete/<%= r.id %>">
-            <button class="btn btn-danger">Удалить</button>
+          <button type="button" class="btn btn-outline-secondary view-full" data-text="<%= encodeURIComponent(r.text) %>" title="Посмотреть полностью"><i class="bi bi-eye-fill"></i></button>
+          <button type="button" class="btn btn-outline-primary edit-quote" data-id="<%= r.id %>" data-text="<%= encodeURIComponent(r.text) %>" title="Редактировать"><i class="bi bi-pencil-fill"></i></button>
+          <form method="POST" action="/quotes/delete/<%= r.id %>" class="d-inline" onsubmit="return confirm('Вы уверены, что хотите удалить эту цитату?');">
+            <button class="btn btn-outline-danger" title="Удалить"><i class="bi bi-trash-fill"></i></button>
           </form>
         </div>
       </td>
@@ -32,9 +33,9 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" action="/quotes">
-        <div class="modal-header"><h5 class="modal-title">Новая цитата</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body"><textarea name="text" class="form-control" rows="6" required></textarea></div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-square-fill me-2"></i>Новая цитата</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><textarea name="text" class="form-control" rows="6" required placeholder="Введите текст цитаты..."></textarea></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-check-circle-fill me-1"></i>Добавить</button></div>
       </form>
     </div>
   </div>
@@ -44,7 +45,7 @@
 <div class="modal fade" id="quoteModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Полная цитата</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-card-text me-2"></i>Полная цитата</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body" id="quoteModalBody" style="white-space:pre-wrap;"></div>
     </div>
   </div>
@@ -55,9 +56,9 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" id="editQuoteForm" action="">
-        <div class="modal-header"><h5 class="modal-title">Редактировать цитату</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Редактировать цитату</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body"><textarea name="text" class="form-control" rows="6" required></textarea></div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Сохранить</button></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-save-fill me-1"></i>Сохранить</button></div>
       </form>
     </div>
   </div>
@@ -69,19 +70,19 @@
     <div class="modal-content">
       <form method="POST" action="/quotes/import" enctype="multipart/form-data">
         <div class="modal-header">
-          <h5 class="modal-title">Импорт цитат</h5>
+          <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up-fill me-2"></i>Импорт цитат</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
             <label for="quotesFile" class="form-label">JSON файл с цитатами</label>
             <input type="file" class="form-control" id="quotesFile" name="quotesFile" accept=".json" required>
-            <div class="form-text">Формат: [{"text": "..."}]</div>
+            <div class="form-text">Ожидаемый формат: массив объектов, каждый объект с ключом "text". Например: <code>[{"text": "Первая цитата..."}, {"text": "Вторая цитата..."}]</code></div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-          <button class="btn btn-primary">Загрузить</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Загрузить</button>
         </div>
       </form>
     </div>

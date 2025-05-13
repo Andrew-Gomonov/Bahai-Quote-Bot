@@ -17,21 +17,30 @@ function pushModalMarkup() {
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="POST" action="/broadcasts/push">
-        <div class="modal-header"><h5 class="modal-title">Новая PUSH рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-send-plus-fill me-2"></i>Новая PUSH рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="row g-2 mb-3">
-            <div class="col"><input type="date" name="date" class="form-control" required></div>
-            <div class="col"><input type="time" name="time" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-calendar-date me-1"></i>Дата</label><input type="date" name="date" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
           </div>
-          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" value="1" id="pushUseGpt" name="use_gpt">
-            <label class="form-check-label" for="pushUseGpt">Сгенерировать текст через ChatGPT</label>
+            <label class="form-check-label" for="pushUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT</label>
           </div>
-          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
-          <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
       </form>
     </div>
   </div>
@@ -44,25 +53,35 @@ function weeklyModalMarkup() {
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="POST" action="/broadcasts/weekly">
-        <div class="modal-header"><h5 class="modal-title">Новая Weekly рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-week-fill me-2"></i>Новая Weekly рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="row g-2 mb-3">
-            <div class="col">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-calendar-day me-1"></i>День недели</label>
               <select name="day" class="form-select">
-                <option value="1">Пн</option><option value="2">Вт</option><option value="3">Ср</option><option value="4">Чт</option><option value="5">Пт</option><option value="6">Сб</option><option value="7">Вс</option>
+                <option value="1">Понедельник</option><option value="2">Вторник</option><option value="3">Среда</option><option value="4">Четверг</option><option value="5">Пятница</option><option value="6">Суббота</option><option value="7">Воскресенье</option>
               </select>
             </div>
-            <div class="col"><input type="time" name="time" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
           </div>
-          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" value="1" id="weeklyUseGpt" name="use_gpt">
-            <label class="form-check-label" for="weeklyUseGpt">Сгенерировать текст через ChatGPT (каждую неделю будет новый)</label>
+            <label class="form-check-label" for="weeklyUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT (каждую неделю будет новый)</label>
           </div>
-          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
-          <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
       </form>
     </div>
   </div>
@@ -75,20 +94,29 @@ function dailyModalMarkup() {
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form method="POST" action="/broadcasts/daily">
-        <div class="modal-header"><h5 class="modal-title">Новая Daily рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-day-fill me-2"></i>Новая Daily рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="row g-2 mb-3">
-            <div class="col"><input type="time" name="time" class="form-control" required></div>
+            <div class="col"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
           </div>
-          <textarea name="message" class="form-control mb-2" rows="4" placeholder="Сообщение (оставь пустым, если ChatGPT)"></textarea>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" value="1" id="dailyUseGpt" name="use_gpt">
-            <label class="form-check-label" for="dailyUseGpt">Сгенерировать текст через ChatGPT (каждый день будет новый)</label>
+            <label class="form-check-label" for="dailyUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT (каждый день будет новый)</label>
           </div>
-          <textarea name="gpt_prompt" class="form-control mb-2" rows="3" placeholder="Промпт для ChatGPT (опц.)"></textarea>
-          <input type="text" name="image" class="form-control" placeholder="Ссылка/ID картинки (опц.)" />
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button class="btn btn-primary">Добавить</button></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
       </form>
     </div>
   </div>
@@ -101,14 +129,22 @@ function imgModalMarkup() {
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" id="imgForm" action="">
-        <div class="modal-header"><h5 class="modal-title">Изображение рассылки</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-image-fill me-2"></i>Изображение рассылки</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
+          <label class="form-label">URL или FileID изображения</label>
           <div class="input-group mb-3">
-            <input type="text" name="image" class="form-control" placeholder="URL или FileID" />
-            <a id="imgOpen" class="btn btn-outline-secondary" href="#" target="_blank" style="display:none;">Открыть</a>
+            <input type="text" name="image" class="form-control" placeholder="Вставьте URL или Telegram File ID" />
+            <a id="imgOpen" class="btn btn-outline-secondary" href="#" target="_blank" style="display:none;" title="Открыть изображение в новой вкладке"><i class="bi bi-box-arrow-up-right"></i></a>
+          </div>
+          <small class="form-text text-muted">Оставьте поле пустым и нажмите "Сохранить", чтобы удалить текущее изображение (если оно было).</small>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button type="submit" name="remove" value="1" class="btn btn-outline-danger" title="Удалить изображение из этой рассылки"><i class="bi bi-trash-fill me-1"></i>Удалить картинку</button>
+          <div>
+            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save-fill me-1"></i>Сохранить</button>
           </div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" name="remove" value="1" class="btn btn-danger">Удалить</button><button class="btn btn-primary">Сохранить</button></div>
       </form>
     </div>
   </div>
