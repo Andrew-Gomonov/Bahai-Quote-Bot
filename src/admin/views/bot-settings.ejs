@@ -9,6 +9,7 @@
 
 <h2>Настройки бота и OpenAI</h2>
 
+<% if (typeof role !== 'undefined' && role !== 'guest') { %>
 <!-- Settings Card -->
 <div class="card mb-4">
   <div class="card-header">
@@ -54,3 +55,8 @@
     </form>
   </div>
 </div> 
+<% } else { %>
+<div class="alert alert-info" role="alert">
+  <i class="bi bi-info-circle-fill me-2"></i>Настройки бота и управление панелью доступны только администраторам.
+</div>
+<% } %> 

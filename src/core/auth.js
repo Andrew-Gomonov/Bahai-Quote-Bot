@@ -9,9 +9,9 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((username, done) => {
-  db.get('SELECT role FROM web_admins WHERE username = ?', [username], (err, row) => {
+  db.get('SELECT role, profile_picture FROM web_admins WHERE username = ?', [username], (err, row) => {
     if (err) return done(err);
-    done(null, { username, role: row?.role || 'admin' });
+    done(null, { username, role: row?.role || 'admin', profile_picture: row?.profile_picture || null });
   });
 });
 
@@ -52,7 +52,7 @@ passport.use(new LocalStrategy(
 // Middleware для проверки аутентификации
 const isAuthenticated = (req, res, next) => {
   // Разрешаем свободный доступ к странице логина и статике (если добавится)
-  const openPaths = ['/login'];
+  const openPaths = ['/login', '/logout'];
   if (openPaths.includes(req.path)) {
     return next();
   }

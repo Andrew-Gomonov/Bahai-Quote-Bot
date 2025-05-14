@@ -3,8 +3,36 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { db: sharedDb } = require('../../core/db'); // Потребуется для работы с БД
 const { passport } = require('../../core/auth');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
 function db() { return sharedDb; }
+
+const avatarDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, avatarDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safeName = file.fieldname + '-' + Date.now() + ext;
+    cb(null, safeName);
+  }
+});
+
+function fileFilter(req, file, cb) {
+  const allowed = ['image/jpeg', 'image/png', 'image/gif'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type'));
+  }
+}
+
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter });
 
 // Login page
 router.get('/login', (req, res) => {
@@ -27,15 +55,24 @@ router.get('/logout', (req, res) => {
   if (!req.isAuthenticated()) { // Если не залогинен, нечего и выходить
     return res.redirect('/login');
   }
-  res.render('logout', { title: 'Выход из системы' });
+  res.render('logout', {
+    title: 'Выход из системы',
+    currentUser: req.user?.username,
+    role: req.user?.role
+  });
 });
 
 // Logout - POST
 router.post('/logout', (req, res, next) => {
-  req.logout((err) => {
-    if (err) { return next(err); } // Передаем ошибку дальше, если она есть
+  if (req.isAuthenticated()) {
+    req.logout((err) => {
+      if (err) { return next(err); } 
+      res.redirect('/login');
+    });
+  } else {
+    // Если пользователь как-то умудрился сюда попасть без аутентификации
     res.redirect('/login');
-  });
+  }
 });
 
 // Change credentials page - GET
@@ -52,7 +89,7 @@ router.get('/change-credentials', (req, res) => {
 });
 
 // Change credentials page - POST
-router.post('/change-credentials', async (req, res) => {
+router.post('/change-credentials', upload.single('profile_picture'), async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect('/login');
   }
@@ -86,12 +123,14 @@ router.post('/change-credentials', async (req, res) => {
 
       let finalUsername = admin.username;
       let newHashedPassword = admin.password;
+      let finalProfilePic = admin.profile_picture;
       let changesMade = false;
+      let credsChanged = false;
 
       if (newUsername && newUsername.trim() !== admin.username) {
         // Проверка, не занято ли новое имя пользователя другим админом
         const existingUser = await new Promise((resolve, reject) => {
-          d.get('SELECT username FROM web_admins WHERE username = ? AND username != ?', 
+          d.get('SELECT username FROM web_admins WHERE username = ? AND username != ?',
                 [newUsername.trim(), currentAdminUsername], (e, row) => e ? reject(e) : resolve(row));
         });
         if (existingUser) {
@@ -100,6 +139,7 @@ router.post('/change-credentials', async (req, res) => {
         }
         finalUsername = newUsername.trim();
         changesMade = true;
+        credsChanged = true;
       }
 
       if (newPassword) {
@@ -129,28 +169,57 @@ router.post('/change-credentials', async (req, res) => {
         }
         newHashedPassword = await bcrypt.hash(newPassword, 10);
         changesMade = true;
+        credsChanged = true;
+      }
+
+      // Handle profile picture upload
+      if (req.file) {
+        const relPath = '/uploads/avatars/' + req.file.filename;
+        // Remove old file if exists and different
+        if (admin.profile_picture && admin.profile_picture !== relPath) {
+          const oldPath = path.join(__dirname, '..', 'public', admin.profile_picture);
+          if (fs.existsSync(oldPath)) {
+            fs.unlink(oldPath, () => {});
+          }
+        }
+        finalProfilePic = relPath;
+        changesMade = true;
       }
 
       if (!changesMade) {
-        req.flash('success', 'Изменений не было внесено.'); // или info, если есть такой тип
+        req.flash('success', 'Изменений не было внесено.');
         return res.redirect('/change-credentials');
       }
-      
-      // Обновляем в БД
-      d.run('UPDATE web_admins SET username = ?, password = ? WHERE username = ?', 
-            [finalUsername, newHashedPassword, currentAdminUsername], (updateErr) => {
+
+      d.run('UPDATE web_admins SET username = ?, password = ?, profile_picture = ? WHERE username = ?',
+            [finalUsername, newHashedPassword, finalProfilePic, currentAdminUsername], (updateErr) => {
         if (updateErr) {
           console.error('[ADMIN] DB Error updating credentials:', updateErr);
           req.flash('error', 'Ошибка базы данных при обновлении учетных данных.');
           return res.redirect('/change-credentials');
         }
 
-        // Если имя пользователя или пароль изменены, нужно разлогинить
-        // и попросить войти снова с новыми данными.
-        req.logout(() => {
-          req.flash('success', 'Учетные данные успешно обновлены! Пожалуйста, войдите снова с новыми данными.');
-          res.redirect('/login');
-        });
+        if (credsChanged) {
+          // Обновляем сессию, чтобы не выкидывать пользователя после изменения логина/пароля
+          const newUserObj = { username: finalUsername, role: admin.role, profile_picture: finalProfilePic };
+          req.login(newUserObj, (loginErr) => {
+            if (loginErr) {
+              console.error('[ADMIN] Error during re-login after credential change:', loginErr);
+              req.flash('error', 'Учетные данные обновлены, но произошла ошибка при обновлении сессии. Пожалуйста, войдите снова.');
+              return res.redirect('/login');
+            }
+            // Обновляем объект req.user для текущего запроса
+            req.user.username = finalUsername;
+            req.user.profile_picture = finalProfilePic;
+            req.flash('success', 'Учетные данные успешно обновлены! Вы остались в системе.');
+            return res.redirect('/change-credentials');
+          });
+        } else {
+          // Только аватарка – остаёмся в сессии
+          req.user.profile_picture = finalProfilePic;
+          req.flash('success', 'Аватарка успешно обновлена!');
+          res.redirect('/change-credentials');
+        }
       });
     });
   } catch (e) {
@@ -158,6 +227,15 @@ router.post('/change-credentials', async (req, res) => {
     req.flash('error', 'Произошла внутренняя ошибка сервера.');
     res.redirect('/change-credentials');
   }
+});
+
+// Error handler for multer size limit
+router.use((err, req, res, next) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    req.flash('error', 'Файл слишком большой. Максимум 10 МБ.');
+    return res.redirect('/change-credentials');
+  }
+  next(err);
 });
 
 module.exports = router; 

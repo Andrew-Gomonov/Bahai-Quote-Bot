@@ -1,12 +1,14 @@
 <h2 class="mb-4 d-flex justify-content-between align-items-center">
   <span><i class="bi bi-people-fill me-2"></i>Пользователи</span>
+  <% if (typeof role !== 'undefined' && role !== 'guest') { %>
   <div>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-person-plus-fill me-1"></i> Добавить</button>
   </div>
+  <% } %>
 </h2>
 <table id="usersTbl" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
   <thead>
-    <tr><th>ID</th><th>Timezone</th><th>Daily time</th><th class="text-center">Подписка</th><th>Last daily</th><th class="text-center">Действия</th></tr>
+    <tr><th>ID</th><th>Timezone</th><th>Daily time</th><th class="text-center">Подписка</th><th>Last daily</th><% if (typeof role !== 'undefined' && role !== 'guest') { %><th class="text-center">Действия</th><% } %></tr>
   </thead>
   <tbody>
   <% rows.forEach(function(u){ %>
@@ -22,6 +24,7 @@
         <% } %>
       </td>
       <td><%= u.last_daily_sent || '-' %></td>
+      <% if (typeof role !== 'undefined' && role !== 'guest') { %>
       <td class="text-center">
         <div class="btn-group btn-group-sm">
           <button type="button" class="btn btn-outline-primary edit-user" title="Редактировать" data-id="<%= u.chat_id %>" data-tz="<%= u.timezone %>" data-time="<%= u.daily_time %>" data-sub="<%= u.subscribed %>"><i class="bi bi-pencil-fill"></i></button>
@@ -30,11 +33,13 @@
           </form>
         </div>
       </td>
+      <% } %>
     </tr>
   <% }); %>
   </tbody>
 </table>
 
+<% if (typeof role !== 'undefined' && role !== 'guest') { %>
 <!-- Add user modal -->
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
@@ -88,8 +93,10 @@
     </div>
   </div>
 </div>
+<% } %>
 
 <script>
+ <% if (typeof role !== 'undefined' && role !== 'guest') { %>
  // edit button handler
  document.addEventListener('click', function(e){
    const btn=e.target.closest('.edit-user'); if(!btn) return;
@@ -105,5 +112,6 @@
    const modal=new bootstrap.Modal(document.getElementById('editUserModal'));
    modal.show();
  });
+ <% } %>
  (function dt(){if(window.$&&$.fn.dataTable){$('#usersTbl').DataTable({pageLength:25,responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});} else {setTimeout(dt,50);}})();
 </script> 

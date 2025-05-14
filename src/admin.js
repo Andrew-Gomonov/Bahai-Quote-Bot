@@ -30,8 +30,14 @@ const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin';
 
 const app = express();
 
+const avatarDirPath = path.join(__dirname, 'admin/public/uploads/avatars');
+if (!fs.existsSync(avatarDirPath)) {
+  fs.mkdirSync(avatarDirPath, { recursive: true });
+}
+
 // Static assets (logo, etc.)
 app.use(express.static(path.join(__dirname, 'admin/public')));
+app.use('/uploads/avatars', express.static(path.join(__dirname, 'admin/public/uploads/avatars'))); // Для аватарок
 
 // Настройка сессий
 app.use(session({
@@ -70,12 +76,15 @@ app.locals.version = version;
 app.use((req, res, next) => {
   res.locals.currentUser = req.user ? req.user.username : null;
   res.locals.role = req.user ? req.user.role : null;
+  res.locals.profilePicture = req.user ? req.user.profile_picture : null;
   next();
 });
 
 // Read-only guard for guest role: block any non-GET, non-logout actions
 app.use((req, res, next) => {
   if (req.user && req.user.role === 'guest' && req.method !== 'GET') {
+    // Разрешаем POST /logout гостю, чтобы мог выйти
+    if (req.path === '/logout') return next();
     return res.status(403).send('Forbidden: read-only guest');
   }
   next();

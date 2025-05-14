@@ -89,6 +89,10 @@ function initDatabase() {
           db.run('UPDATE web_admins SET role = "super" WHERE username = ?', [superUser]);
         });
       }
+      const hasProfilePicture = rows.some(r => r.name === 'profile_picture');
+      if (!hasProfilePicture) {
+        db.run('ALTER TABLE web_admins ADD COLUMN profile_picture TEXT');
+      }
     });
 
     db.all('PRAGMA table_info(users)', (err, rows) => {

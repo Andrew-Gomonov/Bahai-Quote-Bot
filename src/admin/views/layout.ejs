@@ -120,11 +120,15 @@
         <span class="navbar-text text-muted me-3 d-none d-lg-inline">v<%= version %></span>
         <div class="dropdown">
           <a class="nav-link dropdown-toggle text-secondary d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-person-circle me-1 fs-5"></i>
+            <% if (profilePicture) { %>
+              <img src="<%= profilePicture %>" alt="avatar" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+            <% } else { %>
+              <i class="bi bi-person-circle me-1 fs-5"></i>
+            <% } %>
             <span class="d-none d-lg-inline"><%= currentUser %><% if(role==='guest'){ %> (guest)<% } %></span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="userMenu">
-            <li><a class="dropdown-item" href="/change-credentials"><i class="bi bi-key-fill"></i>Изменить имя / пароль</a></li>
+            <li><a class="dropdown-item" href="/change-credentials"><i class="bi bi-key-fill"></i>Изменить учетные данные</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right"></i>Выйти</a></li>
           </ul>

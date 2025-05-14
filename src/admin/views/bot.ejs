@@ -9,6 +9,7 @@
 
 <h2>Управление ботом</h2>
 
+<% if (typeof role !== 'undefined' && role !== 'guest') { %>
 <!-- Bot Process Management Card -->
 <div class="card mb-4">
   <div class="card-header">
@@ -47,6 +48,11 @@
     </div>
   </div>
 </div>
+<% } else { %>
+<div class="alert alert-info" role="alert">
+  <i class="bi bi-info-circle-fill me-2"></i>Управление процессом бота доступно только администраторам.
+</div>
+<% } %>
 
 <!-- Settings Card -->
 

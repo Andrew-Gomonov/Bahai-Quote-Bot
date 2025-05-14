@@ -1,11 +1,13 @@
 <h2 class="mb-4"><i class="bi bi-megaphone-fill me-2"></i>Рассылки</h2>
+<% if (typeof role !== 'undefined' && role !== 'guest') { %>
 <div class="d-flex justify-content-end mb-3">
   <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#newPushModal"><i class="bi bi-send-plus-fill me-1"></i> New PUSH</button>
   <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#newWeeklyModal"><i class="bi bi-calendar-week-fill me-1"></i> New Weekly</button>
   <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#newDailyModal"><i class="bi bi-calendar-day-fill me-1"></i> New Daily</button>
 </div>
+<% } %>
 <table id="bcastsTbl" class="table table-striped table-hover dt-responsive nowrap" style="width:100%">
-  <thead><tr><th class="d-none">prio</th><th class="text-center">Статус</th><th>ID</th><th>Тип</th><th>Расписание</th><th class="text-center">Img</th><th>Сообщение</th><th class="text-center">Действия</th></tr></thead>
+  <thead><tr><th class="d-none">prio</th><th class="text-center">Статус</th><th>ID</th><th>Тип</th><th>Расписание</th><% if (typeof role !== 'undefined' && role !== 'guest') { %><th class="text-center">Img</th><% } %><th>Сообщение</th><% if (typeof role !== 'undefined' && role !== 'guest') { %><th class="text-center">Действия</th><% } %></tr></thead>
   <tbody>
   <% rows.forEach(function(b){ %>
     <% const prio = b.type==='weekly'?2:(b.type==='daily'?1:0); %>
@@ -25,12 +27,15 @@
       <td>#<%= b.id %></td>
       <td><%= b.type %></td>
       <td><%= b.schedule %></td>
+      <% if (typeof role !== 'undefined' && role !== 'guest') { %>
       <td class="text-center">
         <button class="btn btn-sm btn-outline-secondary img-btn" data-id="<%= b.id %>" data-img="<%= encodeURIComponent(b.image||'') %>" title="<%= b.image? 'Изменить/удалить изображение' : 'Добавить изображение' %>">
           <i class="bi <%= b.image? 'bi-image-fill' : 'bi-plus-circle-dotted' %>"></i>
         </button>
       </td>
+      <% } %>
       <td><%= b.message.length > 80 ? b.message.slice(0,80) + '…' : b.message %></td>
+      <% if (typeof role !== 'undefined' && role !== 'guest') { %>
       <td class="text-center">
         <div class="btn-group btn-group-sm actions">
           <button type="button" class="btn btn-outline-info view-bcast" title="Посмотреть" data-id="<%= b.id %>" data-type="<%= b.type %>" data-schedule="<%= b.schedule %>" data-message="<%= encodeURIComponent(b.message) %>" data-image="<%= encodeURIComponent(b.image || '') %>"><i class="bi bi-eye-fill"></i></button>
@@ -40,11 +45,13 @@
           </form>
         </div>
       </td>
+      <% } %>
     </tr>
   <% }); %>
   </tbody>
 </table>
 
+<% if (typeof role !== 'undefined' && role !== 'guest') { %>
 <!-- New PUSH modal (same markup as before) -->
 <%- pushModal %>
 <!-- New Weekly modal -->
@@ -68,8 +75,9 @@
     </div>
   </div>
 </div>
+<% } %>
 
-<!-- View broadcast modal -->
+<!-- View broadcast modal (always visible) -->
 <div class="modal fade" id="viewBcastModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -114,17 +122,20 @@
 </div>
 
 <script>
+ <% if (typeof role !== 'undefined' && role !== 'guest') { %>
  // img button handler
  document.addEventListener('click',function(e){const btn=e.target.closest('.img-btn');if(!btn)return;const id=btn.dataset.id;const img=decodeURIComponent(btn.dataset.img||'');const form=document.getElementById('imgForm');form.action='/broadcasts/update-image/'+id;form.image.value=img;const open=document.getElementById('imgOpen');if(img&&img.startsWith('http')){open.href=img;open.style.display='inline-block';}else{open.style.display='none';}const modal=new bootstrap.Modal(document.getElementById('imgModal'));modal.show();});
  // edit broadcast handler
  document.addEventListener('click',function(e){const btn=e.target.closest('.edit-bcast');if(!btn)return;const id=btn.dataset.id;const msg=decodeURIComponent(btn.dataset.msg||'');const form=document.getElementById('editBcastForm');form.action='/broadcasts/edit/'+id;form.message.value=msg;const modal=new bootstrap.Modal(document.getElementById('editBcastModal'));modal.show();});
- // explicit view button
+ <% } %>
+ // explicit view button (always active)
  document.addEventListener('click', function(e){
    const btn=e.target.closest('.view-bcast');if(!btn)return;
-   const type=btn.dataset.type;const schedule=btn.dataset.schedule;const message=decodeURIComponent(btn.dataset.message||'');const image=decodeURIComponent(btn.dataset.image||'');
+   const type=btn.dataset.type;const schedule=btn.dataset.schedule;const message=decodeURIComponent(btn.dataset.message|| '');const image=decodeURIComponent(btn.dataset.image||'');
    document.getElementById('viewType').textContent=type;document.getElementById('viewSchedule').textContent=schedule;document.getElementById('viewMessage').textContent=message;
    const imgContainer=document.getElementById('viewImageContainer');const img=document.getElementById('viewImage');const imgLink=document.getElementById('viewImageLink');if(image&&image.startsWith('http')){img.src='';imgLink.href=image;imgContainer.style.display='block';img.src=image;}else{imgContainer.style.display='none';}
    new bootstrap.Modal(document.getElementById('viewBcastModal')).show();
  });
+ // DataTable init (always active)
  (function dt(){if(window.$&&$.fn.dataTable){$('#bcastsTbl').DataTable({pageLength:20,order:[[0,'desc'],[2,'desc']],columnDefs:[{targets:0,visible:false}],responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});} else {setTimeout(dt,50);}})();
 </script> 

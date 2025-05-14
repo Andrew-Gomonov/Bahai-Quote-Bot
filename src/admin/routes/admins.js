@@ -1,10 +1,35 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
 const bcrypt = require('bcrypt');
 const { db: sharedDb } = require('../../core/db');
 
 function db() { return sharedDb; }
+
+// Avatar upload configuration (reuse same directory as auth route)
+const avatarDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, avatarDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safeName = file.fieldname + '-' + Date.now() + ext;
+    cb(null, safeName);
+  }
+});
+
+function fileFilter(req, file, cb) {
+  const allowed = ['image/jpeg', 'image/png', 'image/gif'];
+  if (allowed.includes(file.mimetype)) cb(null, true); else cb(new Error('Invalid file type'));
+}
+
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter });
 
 // Middleware: only super admins allowed
 function requireSuper(req, res, next) {
@@ -17,7 +42,7 @@ router.get('/', (req, res) => {
   const d = db();
   d.all('SELECT chat_id FROM admins WHERE chat_id IS NOT NULL ORDER BY chat_id', (err, tgRows) => {
     if (err) return res.status(500).send(err.message);
-    d.all('SELECT username, role FROM web_admins ORDER BY username', (e2, webRows) => {
+    d.all('SELECT username, role, profile_picture FROM web_admins ORDER BY username', (e2, webRows) => {
       if (e2) return res.status(500).send(e2.message);
       res.render('admins', {
         title: 'Админы',
@@ -63,29 +88,54 @@ router.post('/web', requireSuper, (req, res) => {
 });
 
 // Update existing web admin (requires super)
-router.post('/web-update/:old', requireSuper, (req, res) => {
+router.post('/web-update/:old', requireSuper, upload.single('profile_picture'), (req, res) => {
   const old = req.params.old;
   const { username: newUser, password, role } = req.body;
   if (!newUser) return res.redirect('/admins');
   const newRole = ['admin', 'guest', 'super'].includes(role) ? role : 'admin';
   const d = db();
 
-  const finish = (hash) => {
-    if (hash) {
-      d.run('UPDATE web_admins SET username = ?, role = ?, password = ? WHERE username = ?', [newUser, newRole, hash, old], () => res.redirect('/admins'));
-    } else {
-      d.run('UPDATE web_admins SET username = ?, role = ? WHERE username = ?', [newUser, newRole, old], () => res.redirect('/admins'));
-    }
-  };
+  // Fetch current profile picture to possibly delete later
+  d.get('SELECT profile_picture FROM web_admins WHERE username = ?', [old], (selErr, row) => {
+    if (selErr) return res.status(500).send(selErr.message);
 
-  if (password) {
-    bcrypt.hash(password, 10, (err, hash) => {
-      if (err) return res.status(500).send(err.message);
-      finish(hash);
-    });
-  } else {
-    finish();
-  }
+    const currentPic = row ? row.profile_picture : null;
+
+    const finish = (hash) => {
+      const queryParts = ['username = ?', 'role = ?'];
+      const params = [newUser, newRole];
+
+      if (hash) {
+        queryParts.push('password = ?');
+        params.push(hash);
+      }
+
+      if (req.file) {
+        const relPath = '/uploads/avatars/' + req.file.filename;
+        queryParts.push('profile_picture = ?');
+        params.push(relPath);
+
+        // Remove old picture if exists and different
+        if (currentPic && currentPic !== relPath) {
+          const oldPath = path.join(__dirname, '..', 'public', currentPic);
+          if (fs.existsSync(oldPath)) fs.unlink(oldPath, () => {});
+        }
+      }
+
+      params.push(old); // WHERE username = ?
+      const sql = `UPDATE web_admins SET ${queryParts.join(', ')} WHERE username = ?`;
+      d.run(sql, params, () => res.redirect('/admins'));
+    };
+
+    if (password) {
+      bcrypt.hash(password, 10, (err, hash) => {
+        if (err) return res.status(500).send(err.message);
+        finish(hash);
+      });
+    } else {
+      finish();
+    }
+  });
 });
 
 // Delete web admin (requires super)
