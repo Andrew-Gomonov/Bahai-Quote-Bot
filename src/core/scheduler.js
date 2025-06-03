@@ -89,9 +89,11 @@ async function startScheduler(db, bot, getRandomQuote, broadcastToAll) {
     });
   }
 
-  // Run immediately and then every minute
-  scheduleLoop();
-  setInterval(scheduleLoop, 60 * 1000);
+  // Run after a short delay to ensure DB migrations have completed
+  setTimeout(() => {
+    scheduleLoop();
+    setInterval(scheduleLoop, 60 * 1000);
+  }, 1000);
 }
 
 module.exports = { startScheduler }; 
