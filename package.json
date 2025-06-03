@@ -1,7 +1,7 @@
 {
-  "name": "bahai-quote-bot",
+  "name": "quote-bot",
   "version": "2.6.0",
-  "description": "Telegram bot that sends Bahá'í quotes to users, with daily schedules, search, and admin broadcasts.",
+  "description": "Telegram bot that sends inspirational quotes to users, with daily schedules, search, and admin broadcasts.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

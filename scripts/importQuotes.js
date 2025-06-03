@@ -1,11 +1,11 @@
 // Usage: node scripts/importQuotes.js [path_to_json] [db_path]
-// Defaults: bahai_quotes.json in project root, bot.db
+// Defaults: quotes.json in project root, bot.db
 
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3');
 
-const jsonPath = process.argv[2] || path.join(__dirname, '..', 'bahai_quotes.json');
+const jsonPath = process.argv[2] || path.join(__dirname, '..', 'quotes.json');
 const dbPath = process.argv[3] || path.join(__dirname, '..', process.env.DB_PATH || 'bot.db');
 
 if (!fs.existsSync(jsonPath)) {

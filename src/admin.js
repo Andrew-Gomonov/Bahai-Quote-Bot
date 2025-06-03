@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 /*
- * Simple Admin Web Panel for Bahá'í Quote Bot
+ * Simple Admin Web Panel for Quote Bot
  * Uses basic HTTP auth; manage quotes and broadcasts.
  */
 

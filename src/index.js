@@ -1,51 +1,56 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const readline = require('node:readline/promises');
 
-const TelegramBot = require('node-telegram-bot-api');
-const { DateTime } = require('luxon');
-const Bluebird = require('bluebird');
-const { version } = require('../package.json');
-const { db, initDatabase: dbInit, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('./core/db');
-const { startScheduler } = require('./core/scheduler');
-const { loadQuotes, getRandomQuote, getQuoteById, searchQuotes, sendQuote, formatQuote, getQuotesCount } = require('./bot/quotes');
-const { registerCommands } = require('./bot/commands');
-
-// ================== CONFIG ==================
-const TOKEN = process.env.BOT_TOKEN;
-if (!TOKEN) {
-  console.error('\n[ERROR] BOT_TOKEN environment variable not set. Create a .env file with BOT_TOKEN=your_token or export it before running.\n');
-  process.exit(1);
+async function runSetup(envPath) {
+  console.log('\n=== First time setup ===');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const botToken = (await rl.question('Telegram bot token: ')).trim();
+  const openai = (await rl.question('OpenAI API key (optional): ')).trim();
+  const dbPath = (await rl.question('SQLite DB path [bot.db]: ')).trim() || 'bot.db';
+  rl.close();
+  const content = `BOT_TOKEN=${botToken}\nOPENAI_API_KEY=${openai}\nDB_PATH=${dbPath}\n`;
+  fs.writeFileSync(envPath, content);
+  console.log('Configuration saved to .env');
 }
 
-const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
-
-// ================== DATABASE ==================
-let bot;
-
-// Init DB and start bot after setup completes
 (async () => {
-  await dbInit(); // инициализация базы (создание таблиц)
+  const envPath = path.join(__dirname, '..', '.env');
+  if (!fs.existsSync(envPath)) {
+    await runSetup(envPath);
+  }
+  require('dotenv').config({ path: envPath });
 
-  // ================== LOAD QUOTES ==================
+  const TelegramBot = require('node-telegram-bot-api');
+  const { DateTime } = require('luxon');
+  const Bluebird = require('bluebird');
+  const { version } = require('../package.json');
+  const { db, initDatabase: dbInit, DEFAULT_TZ, DEFAULT_DAILY_TIME } = require('./core/db');
+  const { startScheduler } = require('./core/scheduler');
+  const { loadQuotes, getRandomQuote, getQuoteById, searchQuotes, sendQuote, formatQuote, getQuotesCount } = require('./bot/quotes');
+  const { registerCommands } = require('./bot/commands');
+
+  const TOKEN = process.env.BOT_TOKEN;
+  if (!TOKEN) {
+    console.error('\n[ERROR] BOT_TOKEN environment variable not set.\n');
+    process.exit(1);
+  }
+
+  const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
+
+  let bot;
+  await dbInit();
   loadQuotes(db);
 
-  // ================== BOT INITIALIZATION ==================
   bot = new TelegramBot(TOKEN, { polling: true });
   console.log(`[INFO] Bot v${version} started...`);
 
   bot.on('polling_error', tgError);
   bot.on('webhook_error', tgError);
 
-  // ================ HELPER FUNCTIONS =================
-
-  // Запускаем отдельный планировщик
   startScheduler(db, bot, getRandomQuote, broadcastToAll);
-
-  // ================== COMMAND HANDLERS ==================
-
-  // Все команды и callback-и теперь регистрируются через отдельный модуль
   registerCommands(bot, db, broadcastToAll, tgError);
 
-  // Graceful shutdown
   process.on('SIGINT', () => {
     console.log('Shutting down...');
     bot.stopPolling();
