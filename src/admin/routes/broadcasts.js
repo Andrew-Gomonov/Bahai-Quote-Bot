@@ -174,7 +174,7 @@ router.post('/push', async (req, res) => {
   if (!(date && time && (message || use_gpt))) return res.redirect('/broadcasts');
 
   const useGpt = use_gpt ? 1 : 0;
-  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)';
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе мудрых цитат (до 400 символов)';
 
   let finalMsg = message;
   if (useGpt) {
@@ -199,7 +199,7 @@ router.post('/weekly', async (req, res) => {
   if (!(day && time && (message || use_gpt))) return res.redirect('/broadcasts');
 
   const useGpt = use_gpt ? 1 : 0;
-  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)';
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе мудрых цитат (до 400 символов)';
 
   let finalMsg = message;
   if (useGpt) {
@@ -223,7 +223,7 @@ router.post('/daily', async (req, res) => {
   if (!(time && (message || use_gpt))) return res.redirect('/broadcasts');
 
   const useGpt = use_gpt ? 1 : 0;
-  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'i (до 400 символов)';
+  const prompt = (gpt_prompt || '').trim() || 'Сгенерируй вдохновляющий пост для Telegram на основе мудрых цитат (до 400 символов)';
 
   let finalMsg = message;
   if (useGpt) {

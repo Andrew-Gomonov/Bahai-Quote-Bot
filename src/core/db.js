@@ -9,6 +9,9 @@ const db = new sqlite3.Database(DB_PATH);
 
 function initDatabase() {
   db.serialize(() => {
+    // Improve write performance and allow concurrent reads
+    db.run('PRAGMA journal_mode = WAL');
+    db.run('PRAGMA synchronous = NORMAL');
     db.run(`CREATE TABLE IF NOT EXISTS quotes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       text TEXT NOT NULL
@@ -46,6 +49,7 @@ function initDatabase() {
       sent INTEGER NOT NULL DEFAULT 0,
       last_sent_date TEXT             -- for weekly to avoid double-sending
     );`);
+
 
     // Ensure image column exists if table pre-dated this field
     db.all('PRAGMA table_info(broadcasts)', (err, rows) => {
@@ -106,6 +110,11 @@ function initDatabase() {
         db.run('ALTER TABLE users ADD COLUMN broadcast_enabled INTEGER NOT NULL DEFAULT 1');
       }
     });
+
+    // Frequently queried columns benefit from indexes
+    db.run('CREATE INDEX IF NOT EXISTS idx_users_daily_enabled ON users(daily_enabled)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_users_broadcast_enabled ON users(broadcast_enabled)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_broadcasts_type_sent ON broadcasts(type, sent)');
   });
 }
 

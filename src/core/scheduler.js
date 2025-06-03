@@ -7,7 +7,7 @@ async function startScheduler(db, bot, getRandomQuote, broadcastToAll) {
     let text = b.message;
     if (b.use_gpt) {
       try {
-        text = await gptGenerate(b.gpt_prompt || 'Сгенерируй вдохновляющий пост для Telegram на основе цитат Баха\'и (до 400 символов)');
+        text = await gptGenerate(b.gpt_prompt || 'Сгенерируй вдохновляющий пост для Telegram на основе мудрых цитат (до 400 символов)');
       } catch (e) {
         console.error('[SCHEDULER] GPT error:', e);
       }
