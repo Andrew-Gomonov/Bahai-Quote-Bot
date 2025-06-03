@@ -1,0 +1,52 @@
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6 col-xl-5">
+    <div class="card shadow-lg border-0 rounded-lg mt-5">
+      <div class="card-header bg-primary text-white text-center py-4">
+        <h2 class="card-title mb-0 fs-3"><i class="bi bi-gear-fill me-2"></i>Initial Setup</h2>
+      </div>
+      <div class="card-body p-4 p-md-5">
+        <% if (error) { %>
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <div><%= error %></div>
+        </div>
+        <% } %>
+        <form method="POST" action="/setup">
+          <div class="mb-3">
+            <label class="form-label fs-5">BOT_TOKEN</label>
+            <input type="text" class="form-control" name="bot_token" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-5">DB_PATH</label>
+            <input type="text" class="form-control" name="db_path" placeholder="bot.db">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-5">Admin Username</label>
+            <input type="text" class="form-control" name="admin_user" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-5">Admin Password</label>
+            <input type="password" class="form-control" name="admin_pass" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fs-5">OpenAI API Key</label>
+            <input type="text" class="form-control" name="openai_key">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Model</label>
+              <input type="text" class="form-control" name="openai_model" placeholder="gpt-4o">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Max Tokens</label>
+              <input type="number" class="form-control" name="openai_max_tokens" placeholder="200">
+            </div>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-check-circle me-1"></i>Save & Start</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

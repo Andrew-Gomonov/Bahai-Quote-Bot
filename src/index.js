@@ -1,4 +1,5 @@
-require('dotenv').config();
+const dotenv = require('dotenv');
+dotenv.config();
 
 const TelegramBot = require('node-telegram-bot-api');
 const { DateTime } = require('luxon');
@@ -9,20 +10,19 @@ const { startScheduler } = require('./core/scheduler');
 const { loadQuotes, getRandomQuote, getQuoteById, searchQuotes, sendQuote, formatQuote, getQuotesCount } = require('./bot/quotes');
 const { registerCommands } = require('./bot/commands');
 
-// ================== CONFIG ==================
-const TOKEN = process.env.BOT_TOKEN;
-if (!TOKEN) {
-  console.error('\n[ERROR] BOT_TOKEN environment variable not set. Create a .env file with BOT_TOKEN=your_token or export it before running.\n');
-  process.exit(1);
-}
-
-const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
-
 // ================== DATABASE ==================
 let bot;
 
 // Init DB and start bot after setup completes
 (async () => {
+  const TOKEN = process.env.BOT_TOKEN;
+  if (!TOKEN) {
+    console.error('\n[ERROR] BOT_TOKEN not configured. Launch the admin panel and visit /setup to configure.\n');
+    process.exit(1);
+  }
+
+  const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
+
   await dbInit(); // инициализация базы (создание таблиц)
 
   // ================== LOAD QUOTES ==================

@@ -1,148 +1,138 @@
 require('dotenv').config();
 
 /*
- * Simple Admin Web Panel for Bahá'í Quote Bot
+ * Simple Admin Web Panel for Quote Bot
  * Uses basic HTTP auth; manage quotes and broadcasts.
  */
 
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
 const flash = require('connect-flash');
 const fs = require('fs');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
 const { version } = require('../package.json');
-const { db: sharedDb, initDatabase } = require('./core/db');
-const { passport, isAuthenticated } = require('./core/auth');
-const quotesRouter = require('./admin/routes/quotes');
-const broadcastsRouter = require('./admin/routes/broadcasts');
-const usersRouter = require('./admin/routes/users');
-const adminsRouter = require('./admin/routes/admins');
-const authRouter = require('./admin/routes/auth');
-const botRouter = require('./admin/routes/bot');
 
-const envPath = path.join(__dirname, '..', '.env');
+const setupNeeded = !process.env.BOT_TOKEN && process.env.NODE_ENV !== 'test';
+
+let SQLiteStore, passport, isAuthenticated, sharedDb, initDatabase;
+if (!setupNeeded) {
+  SQLiteStore = require('connect-sqlite3')(session);
+  ({ passport, isAuthenticated } = require('./core/auth'));
+  ({ db: sharedDb, initDatabase } = require('./core/db'));
+}
+
+const quotesRouter = !setupNeeded ? require('./admin/routes/quotes') : null;
+const broadcastsRouter = !setupNeeded ? require('./admin/routes/broadcasts') : null;
+const usersRouter = !setupNeeded ? require('./admin/routes/users') : null;
+const adminsRouter = !setupNeeded ? require('./admin/routes/admins') : null;
+const authRouter = !setupNeeded ? require('./admin/routes/auth') : null;
+const botRouter = !setupNeeded ? require('./admin/routes/bot') : null;
+const setupRouter = require('./admin/routes/setup');
 
 const PORT = Number(process.env.ADMIN_PORT || 3000);
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin';
 
 const app = express();
 
-const avatarDirPath = path.join(__dirname, 'admin/public/uploads/avatars');
-if (!fs.existsSync(avatarDirPath)) {
-  fs.mkdirSync(avatarDirPath, { recursive: true });
-}
-
-// Static assets (logo, etc.)
-app.use(express.static(path.join(__dirname, 'admin/public')));
-app.use('/uploads/avatars', express.static(path.join(__dirname, 'admin/public/uploads/avatars'))); // Для аватарок
-
-// Настройка сессий
-app.use(session({
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    dir: '.'
-  }),
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 часа
-  }
-}));
-
-// Парсинг urlencoded до инициализации passport
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// Настройка flash-сообщений
-app.use(flash());
-
-// Настройка passport
-app.use(passport.initialize());
-app.use(passport.session());
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'admin/views'));
-app.use(expressLayouts);          
-app.set('layout', 'layout');      // общий шаблон
+app.use(expressLayouts);
+app.set('layout', 'layout');
 
-// Добавляем версию в локальные переменные для всех шаблонов
+app.use(express.static(path.join(__dirname, 'admin/public')));
+app.use('/uploads/avatars', express.static(path.join(__dirname, 'admin/public/uploads/avatars')));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
 app.locals.version = version;
 
-// Middleware: передаём имя текущего пользователя во все шаблоны
-app.use((req, res, next) => {
-  res.locals.currentUser = req.user ? req.user.username : null;
-  res.locals.role = req.user ? req.user.role : null;
-  res.locals.profilePicture = req.user ? req.user.profile_picture : null;
-  next();
-});
-
-// Read-only guard for guest role: block any non-GET, non-logout actions
-app.use((req, res, next) => {
-  if (req.user && req.user.role === 'guest' && req.method !== 'GET') {
-    // Разрешаем POST /logout гостю, чтобы мог выйти
-    if (req.path === '/logout') return next();
-    return res.status(403).send('Forbidden: read-only guest');
+if (setupNeeded) {
+  app.use('/', setupRouter);
+  app.use((req, res) => res.redirect('/setup'));
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+      console.log(`[SETUP] Visit http://localhost:${PORT}/setup to configure the bot`);
+    });
   }
-  next();
-});
+} else {
+  const avatarDirPath = path.join(__dirname, 'admin/public/uploads/avatars');
+  if (!fs.existsSync(avatarDirPath)) {
+    fs.mkdirSync(avatarDirPath, { recursive: true });
+  }
 
-// Глобальный middleware аутентификации
-app.use(isAuthenticated);
+  app.use(session({
+    store: new SQLiteStore({
+      db: 'sessions.db',
+      dir: '.'
+    }),
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000
+    }
+  }));
 
-// Переиспользуем единый экземпляр SQLite из db.js и отключаем close()
-if (!sharedDb._adminPatched) {
-  sharedDb.close = () => {};
-  sharedDb._adminPatched = true;
-}
+  app.use(flash());
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-// Ensure DB schema exists (web_admins etc.)
-initDatabase();
+  app.use((req, res, next) => {
+    res.locals.currentUser = req.user ? req.user.username : null;
+    res.locals.role = req.user ? req.user.role : null;
+    res.locals.profilePicture = req.user ? req.user.profile_picture : null;
+    next();
+  });
 
-function db() {
-  return sharedDb;
-}
+  app.use((req, res, next) => {
+    if (req.user && req.user.role === 'guest' && req.method !== 'GET') {
+      if (req.path === '/logout') return next();
+      return res.status(403).send('Forbidden: read-only guest');
+    }
+    next();
+  });
 
-// Quotes routes moved to dedicated router
-app.use('/quotes', quotesRouter);
+  app.use(isAuthenticated);
 
-// Broadcast routes moved to dedicated router
-app.use('/broadcasts', broadcastsRouter);
+  if (!sharedDb._adminPatched) {
+    sharedDb.close = () => {};
+    sharedDb._adminPatched = true;
+  }
 
-// Users routes moved to dedicated router
-app.use('/users', usersRouter);
+  initDatabase();
 
-// Admin management routes
-app.use('/admins', adminsRouter);
+  function db() {
+    return sharedDb;
+  }
 
-// Auth (login/logout)
-app.use('/', authRouter);
-app.use('/', botRouter);
+  app.use('/quotes', quotesRouter);
+  app.use('/broadcasts', broadcastsRouter);
+  app.use('/users', usersRouter);
+  app.use('/admins', adminsRouter);
+  app.use('/', authRouter);
+  app.use('/', botRouter);
 
-// Dashboard
-app.get('/', (req, res) => {
-  const d = db();
-  d.serialize(() => {
-    d.get('SELECT COUNT(*) AS n FROM quotes', (e1, q) => {
-      if (e1) return res.status(500).send(e1.message);
-      d.get('SELECT COUNT(*) AS n FROM users', (e2, u) => {
-        if (e2) return res.status(500).send(e2.message);
-        d.get('SELECT COUNT(*) AS n FROM broadcasts', (e3, b) => {
-          if (e3) return res.status(500).send(e3.message);
-          res.render('dashboard', { title:'Dashboard', quotes:q.n, users:u.n, broadcasts:b.n });
+  app.get('/', (req, res) => {
+    const d = db();
+    d.serialize(() => {
+      d.get('SELECT COUNT(*) AS n FROM quotes', (e1, q) => {
+        if (e1) return res.status(500).send(e1.message);
+        d.get('SELECT COUNT(*) AS n FROM users', (e2, u) => {
+          if (e2) return res.status(500).send(e2.message);
+          d.get('SELECT COUNT(*) AS n FROM broadcasts', (e3, b) => {
+            if (e3) return res.status(500).send(e3.message);
+            res.render('dashboard', { title: 'Dashboard', quotes: q.n, users: u.n, broadcasts: b.n });
+          });
         });
       });
     });
   });
-});
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`[ADMIN] Panel running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+      console.log(`[ADMIN] Panel running on http://localhost:${PORT}`);
+    });
+  }
 }
 
-module.exports = app; 
+module.exports = app;
