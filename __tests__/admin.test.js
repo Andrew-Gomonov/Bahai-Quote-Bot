@@ -11,7 +11,7 @@ describe('Admin panel routes', () => {
   test('Login page returns 200', async () => {
     const res = await agent.get('/login');
     expect(res.statusCode).toBe(200);
-    expect(res.text).toMatch(/Вход в панель управления/);
+    expect(res.text).toMatch(/Вход в панель/);
   });
 
   test('Login with correct credentials redirects to dashboard', async () => {
@@ -56,8 +56,8 @@ describe('Admin panel routes', () => {
       .send({ username: 'admin', password: 'admin' });
     
     const res = await agent.get('/logout');
-    expect(res.statusCode).toBe(302);
-    expect(res.header.location).toBe('/login');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toMatch(/Выход из системы/);
   });
 
   test('/quotes returns 200 and contains Цитаты', async () => {

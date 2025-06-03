@@ -10,6 +10,10 @@ const {
 } = require('./quotes'); // ИЗМЕНЕНО (пока так, потом quotes.js тоже переедет)
 
 function registerCommands(bot, db, broadcastToAll, tgError) {
+  // Prepare statements for hot paths to reduce parsing overhead
+  const getLastQuoteStmt = db.prepare('SELECT last_quote_time FROM users WHERE chat_id = ?');
+  const updateLastQuoteStmt = db.prepare('UPDATE users SET last_quote_time = ? WHERE chat_id = ?');
+
   // helper
   function isValidTime(str) {
     return /^([01]\d|2[0-3]):([0-5]\d)$/.test(str);
@@ -73,7 +77,7 @@ function registerCommands(bot, db, broadcastToAll, tgError) {
     const chatId = msg.chat.id;
     const requestedId = match[1] ? Number(match[1]) : null;
 
-    db.get('SELECT last_quote_time FROM users WHERE chat_id = ?', [chatId], (err, row) => {
+    getLastQuoteStmt.get([chatId], (err, row) => {
       const now = Date.now();
       const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
       if (row && row.last_quote_time && now - row.last_quote_time < COOLDOWN_SEC * 1000) {
@@ -91,7 +95,7 @@ function registerCommands(bot, db, broadcastToAll, tgError) {
       if (!q) return bot.sendMessage(chatId, 'База цитат пуста.');
 
       sendQuote(bot, chatId, q);
-      db.run('UPDATE users SET last_quote_time = ? WHERE chat_id = ?', [now, chatId]);
+      updateLastQuoteStmt.run([now, chatId]);
     });
   });
 
@@ -235,6 +239,12 @@ function registerCommands(bot, db, broadcastToAll, tgError) {
         bot.sendMessage(chatId, `Бродкасты ${val ? 'включены' : 'отключены'}.`).catch(tgError);
       });
     });
+  });
+
+  // Finalize prepared statements on process exit
+  process.on('exit', () => {
+    try { getLastQuoteStmt.finalize(); } catch {}
+    try { updateLastQuoteStmt.finalize(); } catch {}
   });
 }
 
