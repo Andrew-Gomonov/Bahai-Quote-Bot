@@ -19,27 +19,40 @@ if (!TOKEN) {
 const COOLDOWN_SEC = process.env.COOLDOWN_SEC ? Number(process.env.COOLDOWN_SEC) : 30;
 
 // ================== DATABASE ==================
-dbInit(); // инициализация базы (создание таблиц)
+let bot;
 
-// ================== LOAD QUOTES ==================
-loadQuotes(db);
+// Init DB and start bot after setup completes
+(async () => {
+  await dbInit(); // инициализация базы (создание таблиц)
 
-// ================== BOT INITIALIZATION ==================
-const bot = new TelegramBot(TOKEN, { polling: true });
-console.log(`[INFO] Bot v${version} started...`);
+  // ================== LOAD QUOTES ==================
+  loadQuotes(db);
 
-bot.on('polling_error', tgError);
-bot.on('webhook_error', tgError);
+  // ================== BOT INITIALIZATION ==================
+  bot = new TelegramBot(TOKEN, { polling: true });
+  console.log(`[INFO] Bot v${version} started...`);
 
-// ================ HELPER FUNCTIONS =================
+  bot.on('polling_error', tgError);
+  bot.on('webhook_error', tgError);
 
-// Запускаем отдельный планировщик
-startScheduler(db, bot, getRandomQuote, broadcastToAll);
+  // ================ HELPER FUNCTIONS =================
 
-// ================== COMMAND HANDLERS ==================
+  // Запускаем отдельный планировщик
+  startScheduler(db, bot, getRandomQuote, broadcastToAll);
 
-// Все команды и callback-и теперь регистрируются через отдельный модуль
-registerCommands(bot, db, broadcastToAll, tgError);
+  // ================== COMMAND HANDLERS ==================
+
+  // Все команды и callback-и теперь регистрируются через отдельный модуль
+  registerCommands(bot, db, broadcastToAll, tgError);
+
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('Shutting down...');
+    bot.stopPolling();
+    db.close();
+    process.exit(0);
+  });
+})();
 
 // Unified Telegram error handler to silence non-fatal API errors (e.g. "query is too old")
 function tgError(err) {
@@ -67,14 +80,6 @@ process.on('rejectionHandled', tgError);
 
 // Trap Bluebird unhandled rejections
 Bluebird.onPossiblyUnhandledRejection(tgError);
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('Shutting down...');
-  bot.stopPolling();
-  db.close();
-  process.exit(0);
-});
 
 function broadcastToAll(text, image=null) {
   db.all('SELECT chat_id FROM users WHERE broadcast_enabled = 1', (err, rows) => {
