@@ -5,4 +5,7 @@ uploads/
 *.log
 bot.db
 sessions.db
+*.db-shm
+*.db-wal
+__tests__/test.db
 package-lock.json

@@ -1,6 +1,6 @@
-# Bahá'í Quote Bot (Telegram)
+# Quote Bot (Telegram)
 
-Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a daily schedule and supports text search & admin broadcasts.
+Simple Node.js Telegram-bot that sends random quotes to users on a daily schedule and supports text search & admin broadcasts.
 
 ## Features
 
@@ -21,8 +21,10 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
    ```bash
    npm install
    ```
-2. **Add environment variables**
-   Create `.env` file next to `package.json`:
+2. **Configure**
+   Run `npm run admin-web` and open [http://localhost:3000/setup](http://localhost:3000/setup) in your browser.
+   Enter your bot token and admin credentials and the tool will create a `.env` file automatically.
+   You can also create `.env` manually with the following variables:
    ```
    BOT_TOKEN=<telegram bot token here>
 
@@ -92,17 +94,17 @@ Simple Node.js Telegram-bot that sends random Bahá'í quotes to users on a dail
 
 1. Build image
    ```bash
-   docker build -t bahai-quote-bot .
+   docker build -t quote-bot .
    ```
 2. Run (mount local `data` dir to keep `bot.db` persistent):
    ```bash
-   docker run -d --name bahai-quote-bot \
+   docker run -d --name quote-bot \
      -e BOT_TOKEN=YOUR_TOKEN \
      -e ADMIN_USER=admin \
      -e ADMIN_PASSWORD=secret \
      -p 3000:3000 \
      -v $(pwd)/data:/app \
-     bahai-quote-bot
+     quote-bot
    ```
 
    or it must be much easy with docker-compose:

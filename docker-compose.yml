@@ -2,7 +2,7 @@ version: '3'
 services:
   bot:
     build: .
-    container_name: bahai-quote-bot
+    container_name: quote-bot
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - COOLDOWN_SEC=30
