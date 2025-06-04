@@ -7,7 +7,9 @@ const bcrypt = require('bcrypt');
 const envPath = path.join(__dirname, '..', '..', '.env');
 
 router.get('/setup', (req, res) => {
-  if (process.env.BOT_TOKEN) return res.redirect('/login');
+  if (process.env.BOT_TOKEN) {
+    return res.render('setup-success', { title: 'Setup Complete' });
+  }
   res.render('setup', { title: 'Initial Setup', error: null });
 });
 
@@ -40,7 +42,7 @@ router.post('/setup', (req, res) => {
     if (err) return res.status(500).send(err.message);
     db.run('INSERT OR REPLACE INTO web_admins(username, password, role) VALUES (?, ?, ?)', [admin_user, hash, 'super'], (e) => {
       if (e) return res.status(500).send(e.message);
-      res.redirect('/login');
+      res.render('setup-success', { title: 'Setup Complete' });
     });
   });
 });
