@@ -24,6 +24,7 @@ Simple Node.js Telegram-bot that sends random quotes to users on a daily schedul
 2. **Configure**
    Run `npm run admin-web` and open [http://localhost:3000/setup](http://localhost:3000/setup) in your browser.
    Enter your bot token and admin credentials and the tool will create a `.env` file automatically.
+   After saving, restart the admin panel and log in at `/login`.
    You can also create `.env` manually with the following variables:
    ```
    BOT_TOKEN=<telegram bot token here>

@@ -9,7 +9,7 @@
     "add-admin": "node scripts/addAdmin.js",
     "admin-web": "node src/admin.js",
     "admin-dev": "nodemon --ext js --watch src/admin.js --exec \"node src/admin.js\"",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "author": "andrei.gomonov.md@gmail.com",
   "license": "MIT",
