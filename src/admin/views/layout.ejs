@@ -120,7 +120,7 @@
         <span class="navbar-text text-muted me-3 d-none d-lg-inline">v<%= version %></span>
         <div class="dropdown">
           <a class="nav-link dropdown-toggle text-secondary d-flex align-items-center" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <% if (profilePicture) { %>
+            <% if (typeof profilePicture !== 'undefined' && profilePicture) { %>
               <img src="<%= profilePicture %>" alt="avatar" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
             <% } else { %>
               <i class="bi bi-person-circle me-1 fs-5"></i>
