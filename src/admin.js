@@ -34,6 +34,18 @@ const PORT = Number(process.env.ADMIN_PORT || 3000);
 
 const app = express();
 
+function handleListenError(prefix) {
+  return (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[${prefix}] Port ${PORT} is already in use. Set ADMIN_PORT env variable or stop the process using it.`);
+      process.exit(1);
+    } else {
+      console.error(err);
+      process.exit(1);
+    }
+  };
+}
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'admin/views'));
 app.use(expressLayouts);
@@ -57,9 +69,10 @@ if (setupNeeded) {
   app.use('/', setupRouter);
   app.use((req, res) => res.redirect('/setup'));
   if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[SETUP] Visit http://localhost:${PORT}/setup to configure the bot`);
     });
+    server.on('error', handleListenError('SETUP'));
   }
 } else {
   const avatarDirPath = path.join(__dirname, 'admin/public/uploads/avatars');
@@ -137,9 +150,10 @@ if (setupNeeded) {
   });
 
   if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[ADMIN] Panel running on http://localhost:${PORT}`);
     });
+    server.on('error', handleListenError('ADMIN'));
   }
 }
 
