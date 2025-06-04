@@ -45,6 +45,14 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 app.locals.version = version;
 
+// Ensure template variables exist even before authentication setup
+app.use((req, res, next) => {
+  res.locals.currentUser = null;
+  res.locals.role = null;
+  res.locals.profilePicture = null;
+  next();
+});
+
 if (setupNeeded) {
   app.use('/', setupRouter);
   app.use((req, res) => res.redirect('/setup'));
