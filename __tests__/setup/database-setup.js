@@ -1,4 +1,5 @@
-const Database = require('../../src/core/db');
+const { db, initDatabase } = require('../../src/core/db');
+const sqlite3 = require('sqlite3');
 const path = require('path');
 const fs = require('fs');
 
@@ -10,14 +11,155 @@ class TestDatabase {
 
   // Создание изолированной тестовой БД для каждого теста
   async createTestConnection(testId = 'default') {
-    const db = new Database(this.testDbPath);
-    await db.init();
+    // Создаем новую in-memory базу для каждого теста
+    const testDb = new sqlite3.Database(':memory:');
+    
+    // Промисифицируем методы SQLite для async/await
+    testDb.runAsync = (sql, params = []) => {
+      return new Promise((resolve, reject) => {
+        testDb.run(sql, params, function(err) {
+          if (err) reject(err);
+          else resolve(this);
+        });
+      });
+    };
+    
+    testDb.getAsync = (sql, params = []) => {
+      return new Promise((resolve, reject) => {
+        testDb.get(sql, params, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+    };
+    
+    testDb.allAsync = (sql, params = []) => {
+      return new Promise((resolve, reject) => {
+        testDb.all(sql, params, (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+    };
+    
+    // Алиасы для совместимости
+    testDb.run = testDb.runAsync;
+    testDb.get = testDb.getAsync;
+    testDb.all = testDb.allAsync;
+    
+    // Инициализируем схему базы данных
+    await this.initTestSchema(testDb);
     
     // Заполняем тестовыми данными
-    await this.seedTestData(db);
+    await this.seedTestData(testDb);
     
-    this.connections.set(testId, db);
-    return db;
+    this.connections.set(testId, testDb);
+    return testDb;
+  }
+
+  // Инициализация схемы БД для тестов
+  async initTestSchema(db) {
+    // Создаем все необходимые таблицы
+    await db.run(`CREATE TABLE IF NOT EXISTS quotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      author TEXT,
+      theme TEXT,
+      source TEXT
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS users (
+      chat_id INTEGER PRIMARY KEY,
+      username TEXT,
+      timezone TEXT NOT NULL DEFAULT 'Europe/London',
+      daily_time TEXT NOT NULL DEFAULT '09:00',
+      subscribed INTEGER NOT NULL DEFAULT 1,
+      daily_enabled INTEGER NOT NULL DEFAULT 1,
+      broadcast_enabled INTEGER NOT NULL DEFAULT 1,
+      last_quote_time INTEGER,
+      last_daily_sent TEXT,
+      joined_at TEXT DEFAULT '',
+      quotes_read_total INTEGER NOT NULL DEFAULT 0,
+      daily_streak INTEGER NOT NULL DEFAULT 0,
+      last_active_at TEXT,
+      level INTEGER NOT NULL DEFAULT 1,
+      experience INTEGER NOT NULL DEFAULT 0
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS admins (
+      chat_id INTEGER PRIMARY KEY,
+      notifications_enabled INTEGER NOT NULL DEFAULT 1
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS web_admins (
+      username TEXT PRIMARY KEY,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin',
+      profile_picture TEXT,
+      last_login_at TEXT,
+      failed_attempts INTEGER NOT NULL DEFAULT 0,
+      locked_until TEXT
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS broadcasts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      schedule TEXT NOT NULL,
+      message TEXT NOT NULL,
+      image TEXT,
+      use_gpt INTEGER NOT NULL DEFAULT 0,
+      gpt_prompt TEXT,
+      sent INTEGER NOT NULL DEFAULT 0,
+      last_sent_date TEXT
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS user_achievements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id INTEGER NOT NULL,
+      achievement_type TEXT NOT NULL,
+      achievement_name TEXT NOT NULL,
+      achieved_at TEXT NOT NULL,
+      value INTEGER DEFAULT 0,
+      FOREIGN KEY (chat_id) REFERENCES users (chat_id)
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS quote_reads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id INTEGER NOT NULL,
+      quote_id INTEGER NOT NULL,
+      read_at TEXT NOT NULL,
+      read_type TEXT NOT NULL DEFAULT 'manual',
+      FOREIGN KEY (chat_id) REFERENCES users (chat_id),
+      FOREIGN KEY (quote_id) REFERENCES quotes (id)
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS favorite_quotes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      chat_id INTEGER NOT NULL,
+      quote_id INTEGER NOT NULL,
+      favorited_at TEXT NOT NULL,
+      UNIQUE(chat_id, quote_id),
+      FOREIGN KEY (chat_id) REFERENCES users (chat_id),
+      FOREIGN KEY (quote_id) REFERENCES quotes (id)
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS quote_explanations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      quote_id INTEGER NOT NULL,
+      explanation TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(quote_id),
+      FOREIGN KEY (quote_id) REFERENCES quotes (id)
+    )`);
+
+    await db.run(`CREATE TABLE IF NOT EXISTS ai_explainer_status (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      disabled_at TEXT,
+      enabled_at TEXT,
+      disable_reason TEXT
+    )`);
   }
 
   // Получение существующего соединения
@@ -29,16 +171,28 @@ class TestDatabase {
   async closeConnection(testId = 'default') {
     const db = this.connections.get(testId);
     if (db) {
-      await db.close();
+      return new Promise((resolve, reject) => {
+        db.close((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       this.connections.delete(testId);
     }
   }
 
   // Закрытие всех соединений
   async closeAllConnections() {
+    const promises = [];
     for (const [testId, db] of this.connections) {
-      await db.close();
+      promises.push(new Promise((resolve, reject) => {
+        db.close((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      }));
     }
+    await Promise.all(promises);
     this.connections.clear();
   }
 

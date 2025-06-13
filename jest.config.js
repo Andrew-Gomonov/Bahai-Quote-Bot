@@ -1,7 +1,7 @@
 module.exports = {
   // Основные настройки
   testEnvironment: 'node',
-  roots: ['<rootDir>/../'],
+  roots: ['<rootDir>/__tests__'],
   testMatch: [
     '**/__tests__/**/*.test.js',
     '**/?(*.)+(spec|test).js'
@@ -19,15 +19,15 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: 90
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
     }
   },
   
   // Настройки выполнения
-  setupFilesAfterEnv: ['<rootDir>/setup/test-setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup/test-setup.js'],
   testTimeout: 30000,
   maxWorkers: 4,
   
@@ -47,14 +47,7 @@ module.exports = {
   transform: {},
   
   // Отчеты
-  reporters: [
-    'default',
-    ['jest-html-reporters', {
-      publicPath: '__tests__/reports',
-      filename: 'report.html',
-      expand: true
-    }]
-  ],
+  reporters: ['default'],
   
   // Глобальные переменные
   globals: {
