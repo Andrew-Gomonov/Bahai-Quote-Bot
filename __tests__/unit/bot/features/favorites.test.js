@@ -1,5 +1,5 @@
 const { testDb } = require('../../../setup/database-setup');
-const favorites = require('../../../setup/mocks/favorites-adapter');
+const favorites = require('../../../../src/bot/favorites');
 
 describe('Favorites System', () => {
   let testDatabase;
