@@ -1,0 +1,257 @@
+<h2 class="mb-4"><i class="bi bi-shield-lock-fill me-2"></i>Администраторы</h2>
+
+<ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fs-5" id="telegram-tab" data-bs-toggle="tab" data-bs-target="#telegram-pane" type="button" role="tab" aria-controls="telegram-pane" aria-selected="true">
+      <i class="bi bi-telegram me-1"></i>Telegram Админы
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fs-5" id="webpanel-tab" data-bs-toggle="tab" data-bs-target="#webpanel-pane" type="button" role="tab" aria-controls="webpanel-pane" aria-selected="false">
+      <i class="bi bi-display-fill me-1"></i>Web-панель Админы
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="adminTabsContent">
+  <div class="tab-pane fade show active" id="telegram-pane" role="tabpanel" aria-labelledby="telegram-tab" tabindex="0">
+    <% if (currentUser && currentUser.role !== 'guest') { %>
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTgModal"><i class="bi bi-plus-circle-fill me-1"></i> Добавить Telegram Админа</button>
+    </div>
+    <% } %>
+    <table id="tgTbl" class="table table-striped table-hover w-100 dt-responsive nowrap">
+      <thead><tr><th>ID чата</th><% if (currentUser && currentUser.role !== 'guest') { %><th class="text-center">Действия</th><% } %></tr></thead>
+      <tbody>
+      <% tgAdmins.forEach(function(r){ %>
+        <tr>
+          <td><%= r.chat_id %></td>
+          <% if (currentUser && currentUser.role !== 'guest') { %>
+          <td class="text-center">
+            <form method="POST" action="/admins/delete/<%= r.chat_id %>" onsubmit="return confirm('Удалить Telegram-администратора #<%= r.chat_id %>? Это действие необратимо.');" class="d-inline">
+              <button class="btn btn-sm btn-outline-danger" title="Удалить"><i class="bi bi-trash-fill"></i></button></form>
+          </td>
+          <% } %>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tab-pane fade" id="webpanel-pane" role="tabpanel" aria-labelledby="webpanel-tab" tabindex="0">
+    <% if(isSuper && (currentUser && currentUser.role !== 'guest')){ %>
+      <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addWebModal"><i class="bi bi-plus-circle-fill me-1"></i> Добавить Веб-Админа</button>
+      </div>
+    <% } %>
+    <table id="webTbl" class="table table-striped table-hover w-100 dt-responsive nowrap">
+      <thead><tr><th>Username</th><th>Роль</th><% if (currentUser && currentUser.role !== 'guest') { %><th class="text-center">Действия</th><% } %></tr></thead>
+      <tbody>
+      <% webAdmins.forEach(function(r){ %>
+        <tr>
+          <td><%= r.username %> <% if (r.role==='super'){ %><i class="bi bi-star-fill text-warning" title="Супер-администратор"></i><% } %></td>
+          <td><span class="badge bg-<%= r.role==='super'?'danger':(r.role==='admin'?'primary':'secondary') %> rounded-pill fs-6"><%= r.role %></span></td>
+          <% if (currentUser && currentUser.role !== 'guest') { %>
+          <td class="text-center">
+          <% if(isSuper && r.role!=='super'){ %>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-primary edit-web" title="Редактировать" data-user="<%= r.username %>" data-role="<%= r.role %>" data-picture="<%= r.profile_picture || '' %>"><i class="bi bi-pencil-fill"></i></button>
+              <form method="POST" action="/admins/delete-web/<%= r.username %>" onsubmit="return confirm('Удалить веб-администратора ' + decodeURIComponent('<%= encodeURIComponent(r.username) %>') + '? Это действие необратимо.');" class="d-inline">
+                <button class="btn btn-outline-danger" title="Удалить"><i class="bi bi-trash-fill"></i></button>
+              </form>
+            </div>
+          <% } else if (r.role==='super' && currentUser === r.username) { %>
+             <em class="text-muted"><small>Это Вы (нельзя изменить)</small></em>
+          <% } else if (r.role==='super') { %>
+            <em class="text-muted"><small>Супер-админ (нельзя изменить)</small></em>
+          <% } %>
+          </td>
+          <% } %>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (currentUser && currentUser.role !== 'guest') { %>
+<!-- Modals -->
+<div class="modal fade" id="addTgModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/admins">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-telegram me-2"></i>Новый Telegram-админ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <label for="tg_chat_id" class="form-label"><i class="bi bi-key-fill me-1"></i>Telegram chat ID</label>
+          <input type="number" id="tg_chat_id" name="chat_id" class="form-control" placeholder="Например: 123456789" required>
+          <div class="form-text">Узнать ID можно у бота <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>.</div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addWebModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/admins/web">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-plus-fill me-2"></i>Новый веб-админ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="add_web_username" class="form-label"><i class="bi bi-person-badge-fill me-1"></i>Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+              <input type="text" id="add_web_username" name="username" class="form-control form-control-lg" placeholder="Логин для входа" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add_web_password" class="form-label"><i class="bi bi-lock-fill me-1"></i>Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+              <input type="password" id="add_web_password" name="password" class="form-control form-control-lg" placeholder="Пароль" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="add_web_role" class="form-label"><i class="bi bi-shield-check me-1"></i>Роль</label>
+            <select id="add_web_role" name="role" class="form-select form-select-lg">
+              <option value="admin" selected>admin (может всё, кроме управления админами)</option>
+              <option value="guest">guest (только просмотр)</option>
+              <% if(isSuper){ %><option value="super">super (полный доступ)</option><% } %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Отмена</button>
+          <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save-fill me-1"></i>Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit web-admin modal -->
+<div class="modal fade" id="editWebModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" id="editWebForm" action="" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-gear me-2"></i>Редактировать веб-админа</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_web_username" class="form-label"><i class="bi bi-person-badge-fill me-1"></i>Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+              <input type="text" id="edit_web_username" name="username" class="form-control form-control-lg" placeholder="Новый логин (если нужно изменить)" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="edit_web_password" class="form-label"><i class="bi bi-key-fill me-1"></i>Новый пароль (опционально)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" id="edit_web_password" name="password" class="form-control form-control-lg" placeholder="Оставьте пустым, если не меняете пароль">
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <h6 class="mb-3"><i class="bi bi-image-fill me-2"></i>Аватарка профиля</h6>
+          <div class="d-flex flex-column flex-md-row align-items-center mb-3">
+            <div class="me-md-3 mb-3 mb-md-0 position-relative">
+              <img id="editAvatarPreview" class="rounded-circle border shadow-sm d-none" style="width:100px;height:100px;object-fit:cover;">
+              <div id="editAvatarPlaceholder" class="bg-light d-flex justify-content-center align-items-center rounded-circle border shadow-sm d-none" style="width:100px;height:100px;">
+                <i class="bi bi-person-bounding-box text-muted" style="font-size:2.5rem;"></i>
+              </div>
+            </div>
+            <div class="flex-grow-1 w-100">
+              <label for="edit_web_avatar" class="form-label fw-bold"><i class="bi bi-upload me-1"></i>Загрузить новую аватарку</label>
+              <input type="file" id="edit_web_avatar" name="profile_picture" class="form-control form-control-sm" accept="image/png, image/jpeg, image/gif">
+              <div class="form-text">PNG, JPG или GIF до 10MB. Если не выбрано, аватарка не меняется.</div>
+            </div>
+          </div>
+          
+          <hr class="my-4">
+
+          <div class="mb-3">
+            <label for="edit_web_role" class="form-label"><i class="bi bi-shield-check me-1"></i>Роль</label>
+            <select id="edit_web_role" name="role" class="form-select form-select-lg">
+              <option value="admin">admin</option>
+              <option value="guest">guest</option>
+              <% if(isSuper){ %><option value="super">super</option><% } %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Отмена</button>
+          <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save-fill me-1"></i>Сохранить изменения</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<script>
+ (function dt(){
+   if(window.$ && $.fn.dataTable){
+     $('#tgTbl').DataTable({pageLength:30,responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});
+     $('#webTbl').DataTable({pageLength:30,responsive:true,autoWidth:false,language:{url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'}});
+   } else { setTimeout(dt,50); }
+ })();
+
+<% if (currentUser && currentUser.role !== 'guest') { %>
+// edit web admin
+document.addEventListener('click',function(e){
+  const b=e.target.closest('.edit-web');
+  if(!b)return;
+  const user=b.dataset.user;
+  const role=b.dataset.role;
+  const picUrl=b.dataset.picture; // picUrl will be like /uploads/avatars/profile_picture-1678886400000.png or empty
+
+  const form=document.getElementById('editWebForm');
+  form.action='/admins/web-update/'+user;
+  form.username.value=user;
+  form.role.value=role;
+  const fileInput = document.getElementById('edit_web_avatar');
+  if(fileInput){fileInput.value = '';}
+
+  const avatarPreview = document.getElementById('editAvatarPreview');
+  const avatarPlaceholder = document.getElementById('editAvatarPlaceholder');
+  
+  if (picUrl) {
+    avatarPreview.src = picUrl;
+    avatarPreview.classList.remove('d-none');
+    avatarPlaceholder.classList.add('d-none');
+  } else {
+    avatarPreview.classList.add('d-none');
+    avatarPlaceholder.classList.remove('d-none');
+  }
+  
+  const modal = new bootstrap.Modal(document.getElementById('editWebModal'));
+  modal.show();
+});
+
+// Preview selected avatar in edit modal
+const editAvatarInput = document.getElementById('edit_web_avatar');
+if (editAvatarInput) {
+  editAvatarInput.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const avatarPreview = document.getElementById('editAvatarPreview');
+        const avatarPlaceholder = document.getElementById('editAvatarPlaceholder');
+        avatarPreview.src = e.target.result;
+        avatarPreview.classList.remove('d-none');
+        avatarPlaceholder.classList.add('d-none');
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+}
+<% } %>
+</script> 

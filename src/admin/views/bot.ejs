@@ -1,0 +1,637 @@
+<!-- Notification Container -->
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;"></div>
+
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link <% if (typeof currentPage !== 'undefined' && currentPage === 'status') { %>active<% } %>" href="/bot">Управление процессом</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link <% if (typeof currentPage !== 'undefined' && currentPage === 'settings') { %>active<% } %>" href="/bot/settings">Настройки</a>
+  </li>
+</ul>
+
+<h2>Управление ботом</h2>
+
+<% if (currentUser && currentUser.role !== 'guest') { %>
+<!-- Bot Process Management Card -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-robot"></i> Управление процессом бота</span>
+    <button id="refresh-status" class="btn btn-sm btn-outline-secondary" title="Обновить статус">
+      <i class="bi bi-arrow-clockwise"></i>
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="d-flex align-items-center mb-3">
+      <% if(pid){ %>
+        <div class="flex-grow-1">
+          <div class="card border-info bg-light" style="border-radius: 12px;">
+            <div class="card-body p-3">
+              <div class="row g-2 align-items-center">
+                <div class="col-auto">
+                  <div class="bg-info rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-cpu-fill text-white fs-5"></i>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="fw-bold text-info mb-1">Процесс активен</div>
+                  <div class="small text-muted">
+                    <i class="bi bi-hash me-1"></i>PID: <code class="bg-info text-white px-2 py-1 rounded" style="font-weight: bold;"><%= pid %></code>
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <button class="btn btn-outline-info btn-sm" onclick="showProcessDetails('<%= pid %>')" title="Подробности процесса">
+                    <i class="bi bi-info-circle-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="flex-grow-1">
+          <div class="card border-secondary bg-light" style="border-radius: 12px; opacity: 0.7;">
+            <div class="card-body p-3">
+              <div class="row g-2 align-items-center">
+                <div class="col-auto">
+                  <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-power text-white fs-5"></i>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="fw-bold text-secondary mb-1">Процесс остановлен</div>
+                  <div class="small text-muted">
+                    <i class="bi bi-dash-circle me-1"></i>PID не назначен
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <div id="bot-controls">
+      <% if (status === 'stopped') { %>
+        <button type="button" class="btn btn-success me-2 mb-2" onclick="performAction('start', this)">
+          <i class="bi bi-play-fill me-1"></i>Запустить
+          <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+        </button>
+      <% } else { %>
+        <button type="button" class="btn btn-warning me-2 mb-2" onclick="performAction('stop', this)">
+          <i class="bi bi-stop-fill me-1"></i>Остановить
+          <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+        </button>
+        <button type="button" class="btn btn-info me-2 mb-2" onclick="performAction('restart', this)">
+          <i class="bi bi-arrow-clockwise me-1"></i>Перезапустить
+          <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+        </button>
+        <button type="button" class="btn btn-danger mb-2" onclick="confirmKill(this)">
+          <i class="bi bi-x-circle me-1"></i>Убить процесс
+          <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+        </button>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Action Log Card -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history"></i> Лог действий</span>
+    <small class="text-muted" id="log-count">Последние <%= actionLogs.length %> записей</small>
+  </div>
+  <div class="card-body p-0" id="log-container">
+    <% if (actionLogs && actionLogs.length > 0) { %>
+      <div class="list-group list-group-flush" id="log-list">
+        <% actionLogs.forEach(function(log, index) { %>
+          <div class="list-group-item d-flex justify-content-between align-items-start <%= index === 0 ? 'border-start border-4 border-primary' : '' %>" data-log-id="<%= log.id %>">
+            <div class="me-auto">
+              <div class="d-flex align-items-center mb-1">
+                <% if (log.status === 'success') { %>
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <% } else if (log.status === 'error') { %>
+                  <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                <% } else if (log.status === 'info') { %>
+                  <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                <% } %>
+                <span class="fw-bold"><%= log.action %></span>
+                <% if (log.pid) { %>
+                  <code class="ms-2 bg-light text-dark px-1 rounded small">PID: <%= log.pid %></code>
+                <% } %>
+              </div>
+              <% if (log.details) { %>
+                <div class="small text-muted"><%= log.details %></div>
+              <% } %>
+            </div>
+            <small class="text-muted text-nowrap ms-3">
+              <i class="bi bi-clock me-1"></i><%= log.timestamp %>
+            </small>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="text-center py-4 text-muted" id="empty-log">
+        <i class="bi bi-clock-history fs-1 mb-2"></i>
+        <div>Пока нет записей в логе</div>
+        <small>Действия с ботом будут отображаться здесь</small>
+      </div>
+    <% } %>
+  </div>
+  <div class="card-footer text-center" id="log-footer" style="<%= (!actionLogs || actionLogs.length === 0) ? 'display: none;' : '' %>">
+    <button class="btn btn-outline-secondary btn-sm" onclick="clearActionLog()">
+      <i class="bi bi-trash3 me-1"></i>Очистить лог
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.notification {
+  animation: slideInRight 0.5s ease-out;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: none;
+}
+
+.notification.hiding {
+  animation: slideOutRight 0.3s ease-in forwards;
+}
+
+.notification .alert {
+  margin-bottom: 0;
+  border-radius: 8px;
+}
+
+.btn:disabled {
+  pointer-events: none;
+}
+
+.progress-bar-animated {
+  background-size: 1rem 1rem;
+}
+
+/* Log update animations */
+#log-container {
+  transition: opacity 0.3s ease;
+}
+
+.list-group-item {
+  transition: background-color 0.3s ease;
+}
+</style>
+
+<script>
+let actionInProgress = false;
+
+function showNotification(type, title, message, duration = 5000) {
+  const container = document.getElementById('notification-container');
+  const notificationId = 'notif-' + Date.now();
+  
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.id = notificationId;
+  
+  const alertClass = {
+    'success': 'alert-success',
+    'error': 'alert-danger', 
+    'warning': 'alert-warning',
+    'info': 'alert-info',
+    'loading': 'alert-primary'
+  }[type] || 'alert-info';
+  
+  const icon = {
+    'success': 'bi-check-circle-fill',
+    'error': 'bi-exclamation-triangle-fill',
+    'warning': 'bi-exclamation-triangle-fill', 
+    'info': 'bi-info-circle-fill',
+    'loading': 'bi-hourglass-split'
+  }[type] || 'bi-info-circle-fill';
+  
+  notification.innerHTML = `
+    <div class="alert ${alertClass} alert-dismissible">
+      <div class="d-flex align-items-start">
+        <i class="bi ${icon} me-2 mt-1 fs-5"></i>
+        <div class="flex-grow-1">
+          <div class="fw-bold">${title}</div>
+          <div class="small">${message}</div>
+          ${type === 'loading' ? '<div class="progress mt-2" style="height: 4px;"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div></div>' : ''}
+        </div>
+        <button type="button" class="btn-close" onclick="hideNotification('${notificationId}')"></button>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(notification);
+  
+  if (duration > 0) {
+    setTimeout(() => hideNotification(notificationId), duration);
+  }
+  
+  return notificationId;
+}
+
+function hideNotification(notificationId) {
+  const notification = document.getElementById(notificationId);
+  if (notification) {
+    notification.classList.add('hiding');
+    setTimeout(() => notification.remove(), 300);
+  }
+}
+
+// Обработчик кнопки обновления
+document.addEventListener('DOMContentLoaded', function() {
+  const refreshButton = document.getElementById('refresh-status');
+  if (refreshButton) {
+    refreshButton.addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      icon.style.animation = 'spin 1s linear';
+      updateBotStatus();
+      
+      showNotification('info', 'Статус обновлен', 'Информация о состоянии бота обновлена', 2000);
+      
+      setTimeout(() => {
+        icon.style.animation = '';
+      }, 1000);
+    });
+  }
+});
+
+// CSS для анимации вращения
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .updating {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+`;
+document.head.appendChild(style);
+
+// Улучшенное автообновление статуса
+let autoUpdateInterval;
+let updateInProgress = false;
+
+function startAutoUpdate() {
+  // Очищаем предыдущий интервал если есть
+  if (autoUpdateInterval) {
+    clearInterval(autoUpdateInterval);
+  }
+  
+  // Автообновление каждые 10 секунд
+  autoUpdateInterval = setInterval(() => {
+    if (!updateInProgress && !actionInProgress) {
+      updateBotStatus();
+    }
+  }, 10000);
+  
+  console.log('[ADMIN] Автообновление статуса запущено (каждые 10 секунд)');
+}
+
+// Улучшенная функция обновления статуса
+function updateBotStatus() {
+  if (updateInProgress) return;
+  
+  updateInProgress = true;
+  
+  // Добавляем визуальный индикатор обновления
+  const processInfo = document.querySelector('.d-flex.align-items-center.mb-3');
+  if (processInfo) {
+    processInfo.classList.add('updating');
+  }
+  
+  fetch('/bot', { 
+    method: 'GET',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(response => response.text())
+  .then(html => {
+    // Парсим новую HTML
+    const parser = new DOMParser();
+    const newDoc = parser.parseFromString(html, 'text/html');
+    
+    // Находим все элементы для обновления
+    const newStatus = newDoc.querySelector('#bot-status');
+    const newControls = newDoc.querySelector('#bot-controls');
+    const newProcessInfo = newDoc.querySelector('.d-flex.align-items-center.mb-3');
+    
+    // Обновляем статус
+    if (newStatus) {
+      const currentStatus = document.getElementById('bot-status');
+      if (currentStatus) {
+        currentStatus.innerHTML = newStatus.innerHTML;
+      }
+    }
+    
+    // Обновляем кнопки управления  
+    if (newControls) {
+      const currentControls = document.getElementById('bot-controls');
+      if (currentControls) {
+        currentControls.innerHTML = newControls.innerHTML;
+      }
+    }
+    
+    // Обновляем всю информацию о процессе (статус + PID)
+    if (newProcessInfo) {
+      const currentProcessInfo = document.querySelector('.d-flex.align-items-center.mb-3');
+      if (currentProcessInfo) {
+        currentProcessInfo.innerHTML = newProcessInfo.innerHTML;
+      }
+    }
+    
+    console.log('[ADMIN] Статус бота обновлен');
+  })
+  .catch(err => {
+    console.log('Ошибка обновления статуса:', err);
+    showNotification('warning', 'Ошибка обновления', 'Не удалось обновить статус бота', 3000);
+  })
+  .finally(() => {
+    // Убираем индикатор обновления
+    const processInfo = document.querySelector('.d-flex.align-items-center.mb-3');
+    if (processInfo) {
+      processInfo.classList.remove('updating');
+    }
+    updateInProgress = false;
+  });
+}
+
+// Запускаем автообновление при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+  startAutoUpdate();
+  startLogAutoUpdate();
+  
+  // Первое обновление через 2 секунды после загрузки
+  setTimeout(updateBotStatus, 2000);
+  setTimeout(updateActionLog, 3000);
+});
+
+// Останавливаем автообновление при уходе со страницы
+window.addEventListener('beforeunload', function() {
+  if (autoUpdateInterval) {
+    clearInterval(autoUpdateInterval);
+  }
+  if (logUpdateInterval) {
+    clearInterval(logUpdateInterval);
+  }
+});
+
+// Автообновление лога действий
+let logUpdateInterval;
+let logUpdateInProgress = false;
+
+function startLogAutoUpdate() {
+  // Очищаем предыдущий интервал если есть
+  if (logUpdateInterval) {
+    clearInterval(logUpdateInterval);
+  }
+  
+  // Автообновление лога каждые 5 секунд
+  logUpdateInterval = setInterval(() => {
+    if (!logUpdateInProgress) {
+      updateActionLog();
+    }
+  }, 5000);
+  
+  console.log('[LOG] Автообновление лога запущено (каждые 5 секунд)');
+}
+
+function updateActionLog() {
+  if (logUpdateInProgress) return;
+  
+  logUpdateInProgress = true;
+  
+  fetch('/bot/api/logs')
+    .then(response => response.json())
+    .then(data => {
+      updateLogDisplay(data.logs, data.count);
+    })
+    .catch(error => {
+      console.log('[LOG] Ошибка обновления лога:', error);
+    })
+    .finally(() => {
+      logUpdateInProgress = false;
+    });
+}
+
+function updateLogDisplay(logs, count) {
+  const logContainer = document.getElementById('log-container');
+  const logCount = document.getElementById('log-count');
+  const logFooter = document.getElementById('log-footer');
+  
+  if (!logContainer || !logCount) return;
+  
+  // Обновляем счетчик
+  logCount.textContent = `Последние ${count} записей`;
+  
+  if (logs.length === 0) {
+    // Показываем пустое состояние
+    logContainer.innerHTML = `
+      <div class="text-center py-4 text-muted" id="empty-log">
+        <i class="bi bi-clock-history fs-1 mb-2"></i>
+        <div>Пока нет записей в логе</div>
+        <small>Действия с ботом будут отображаться здесь</small>
+      </div>
+    `;
+    if (logFooter) logFooter.style.display = 'none';
+  } else {
+    // Генерируем HTML для лога
+    let logHtml = '<div class="list-group list-group-flush" id="log-list">';
+    
+    logs.forEach((log, index) => {
+      const iconClass = log.status === 'success' ? 'bi-check-circle-fill text-success' :
+                       log.status === 'error' ? 'bi-x-circle-fill text-danger' :
+                       'bi-info-circle-fill text-primary';
+      
+      const borderClass = index === 0 ? 'border-start border-4 border-primary' : '';
+      const pidCode = log.pid ? `<code class="ms-2 bg-light text-dark px-1 rounded small">PID: ${log.pid}</code>` : '';
+      const details = log.details ? `<div class="small text-muted">${log.details}</div>` : '';
+      
+      logHtml += `
+        <div class="list-group-item d-flex justify-content-between align-items-start ${borderClass}" data-log-id="${log.id}">
+          <div class="me-auto">
+            <div class="d-flex align-items-center mb-1">
+              <i class="bi ${iconClass} me-2"></i>
+              <span class="fw-bold">${log.action}</span>
+              ${pidCode}
+            </div>
+            ${details}
+          </div>
+          <small class="text-muted text-nowrap ms-3">
+            <i class="bi bi-clock me-1"></i>${log.timestamp}
+          </small>
+        </div>
+      `;
+    });
+    
+    logHtml += '</div>';
+    
+    // Проверяем, нужно ли обновлять содержимое
+    const currentLogIds = Array.from(document.querySelectorAll('[data-log-id]')).map(el => el.dataset.logId);
+    const newLogIds = logs.map(log => log.id.toString());
+    
+    if (JSON.stringify(currentLogIds) !== JSON.stringify(newLogIds)) {
+      // Плавное обновление
+      logContainer.style.opacity = '0.5';
+      setTimeout(() => {
+        logContainer.innerHTML = logHtml;
+        logContainer.style.opacity = '1';
+        
+        // Анимация для новой записи
+        const firstItem = logContainer.querySelector('.list-group-item:first-child');
+        if (firstItem && !currentLogIds.includes(firstItem.dataset.logId)) {
+          firstItem.style.backgroundColor = '#e3f2fd';
+          setTimeout(() => {
+            firstItem.style.backgroundColor = '';
+          }, 2000);
+        }
+      }, 200);
+    }
+    
+    if (logFooter) logFooter.style.display = 'block';
+  }
+}
+
+function performAction(action, button) {
+  if (actionInProgress) return;
+  
+  actionInProgress = true;
+  const spinner = button.querySelector('.spinner-border');
+  const icon = button.querySelector('i:first-child');
+  
+  // Анимация кнопки
+  spinner.classList.remove('d-none');
+  icon.style.opacity = '0.5';
+  button.disabled = true;
+  
+  const actionTexts = {
+    'start': { loading: 'Запуск бота...', success: 'Бот запущен!', error: 'Ошибка запуска' },
+    'stop': { loading: 'Остановка бота...', success: 'Бот остановлен', error: 'Ошибка остановки' },
+    'restart': { loading: 'Перезапуск бота...', success: 'Бот перезапущен!', error: 'Ошибка перезапуска' },
+    'kill': { loading: 'Принудительная остановка...', success: 'Процесс завершен', error: 'Ошибка завершения' }
+  };
+  
+  const texts = actionTexts[action];
+  const loadingNotifId = showNotification('loading', texts.loading, 'Пожалуйста, подождите...', 0);
+  
+  fetch(`/bot/${action}`, { method: 'POST' })
+  .then(response => {
+    if (response.ok) {
+      hideNotification(loadingNotifId);
+      
+      if (action === 'restart') {
+        showNotification('info', 'Перезапуск в процессе', 'Ожидание запуска нового процесса...');
+        // Для перезапуска ждем дольше
+        setTimeout(() => {
+          showNotification('success', texts.success, 'Операция выполнена успешно');
+          updateBotStatus();
+        }, 2000);
+      } else {
+        showNotification('success', texts.success, 'Операция выполнена успешно');
+        setTimeout(updateBotStatus, 1000);
+      }
+    } else {
+      throw new Error('Ошибка сервера');
+    }
+  })
+  .catch(error => {
+    hideNotification(loadingNotifId);
+    showNotification('error', texts.error, 'Попробуйте еще раз или обратитесь к администратору');
+    console.error('Ошибка действия:', error);
+  })
+  .finally(() => {
+    // Восстанавливаем кнопку
+    spinner.classList.add('d-none');
+    icon.style.opacity = '1';
+    button.disabled = false;
+    actionInProgress = false;
+  });
+}
+
+function confirmKill(button) {
+  if (confirm('Вы уверены, что хотите принудительно завершить процесс бота?\n\nЭто может привести к потере несохраненных данных.')) {
+    performAction('kill', button);
+  }
+}
+
+// Функция для отображения подробностей процесса
+function showProcessDetails(pid) {
+  const details = `
+    <div class="alert alert-info">
+      <h6><i class="bi bi-info-circle-fill me-2"></i>Информация о процессе</h6>
+      <hr>
+      <div class="row">
+        <div class="col-sm-6">
+          <strong><i class="bi bi-hash me-1"></i>PID:</strong> ${pid}
+        </div>
+        <div class="col-sm-6">
+          <strong><i class="bi bi-clock-fill me-1"></i>Время запуска:</strong> ${new Date().toLocaleString('ru-RU')}
+        </div>
+      </div>
+      <div class="mt-2">
+        <strong><i class="bi bi-gear-fill me-1"></i>Команда:</strong> <code>node src/index.js</code>
+      </div>
+      <div class="mt-2">
+        <strong><i class="bi bi-folder-fill me-1"></i>Рабочая директория:</strong> <code>/home/andrei/Documents/Bahai-Quote-Bot</code>
+      </div>
+    </div>
+  `;
+  
+  showNotification('info', 'Подробности процесса', details, 10000);
+}
+
+// Функция для очистки лога действий
+function clearActionLog() {
+  if (confirm('Вы уверены, что хотите очистить лог действий?\n\nВся история будет удалена.')) {
+    fetch('/bot/clear-log', { method: 'POST' })
+      .then(() => {
+        showNotification('success', 'Лог очищен', 'История действий успешно удалена', 3000);
+        // Обновляем лог через секунду
+        setTimeout(updateActionLog, 1000);
+      })
+      .catch(error => {
+        console.error('Ошибка очистки лога:', error);
+        showNotification('error', 'Ошибка', 'Не удалось очистить лог', 3000);
+      });
+  }
+}
+</script>
+
+<% } else { %>
+<div class="alert alert-info" role="alert">
+  <i class="bi bi-info-circle-fill me-2"></i>Управление процессом бота доступно только администраторам.
+</div>
+<% } %>
+
+<!-- Settings Card -->
+
+<!-- Admin Panel Control Card --> 

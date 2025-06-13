@@ -1,0 +1,205 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .search-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    border-left: 4px solid #007bff;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: #007bff;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+  }
+</style>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1>🔍 Управление поиском</h1>
+      <p class="text-muted">Управление метаданными цитат, авторами и темами</p>
+    </div>
+  </div>
+
+  <!-- Статистика поиска -->
+  <div class="search-section">
+    <h3>📊 Статистика поиска</h3>
+    <div class="stats-grid" id="searchStats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalQuotes">-</div>
+        <div>Всего цитат</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="withAuthor">-</div>
+        <div>С авторами</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="withTheme">-</div>
+        <div>С темами</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="withSource">-</div>
+        <div>С источниками</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="uniqueAuthors">-</div>
+        <div>Уникальных авторов</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="uniqueThemes">-</div>
+        <div>Уникальных тем</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>👤 Авторы</h5>
+        </div>
+        <div class="card-body" id="authorsList">
+          Загрузка...
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>🏷️ Темы</h5>
+        </div>
+        <div class="card-body" id="themesList">
+          Загрузка...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Загрузка статистики поиска
+async function loadSearchStats() {
+  try {
+    console.log('Loading search stats...');
+    const response = await fetch('/search/stats');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const stats = await response.json();
+    console.log('Search stats loaded:', stats);
+    
+    const totalQuotes = document.getElementById('totalQuotes');
+    const withAuthor = document.getElementById('withAuthor');
+    const withTheme = document.getElementById('withTheme');
+    const withSource = document.getElementById('withSource');
+    const uniqueAuthors = document.getElementById('uniqueAuthors');
+    const uniqueThemes = document.getElementById('uniqueThemes');
+    
+    if (totalQuotes) totalQuotes.textContent = stats.total || 0;
+    if (withAuthor) withAuthor.textContent = stats.withAuthor || 0;
+    if (withTheme) withTheme.textContent = stats.withTheme || 0;
+    if (withSource) withSource.textContent = stats.withSource || 0;
+    if (uniqueAuthors) uniqueAuthors.textContent = stats.uniqueAuthors || 0;
+    if (uniqueThemes) uniqueThemes.textContent = stats.uniqueThemes || 0;
+  } catch (error) {
+    console.error('Error loading search stats:', error);
+    // Показываем ошибку пользователю
+    const totalQuotes = document.getElementById('totalQuotes');
+    if (totalQuotes) totalQuotes.textContent = 'Ошибка';
+  }
+}
+
+// Загрузка списка авторов
+async function loadAuthors() {
+  try {
+    console.log('Loading authors...');
+    const response = await fetch('/search/authors');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const authors = await response.json();
+    console.log('Authors loaded:', authors);
+    
+    const authorsList = document.getElementById('authorsList');
+    
+    if (!authorsList) {
+      console.warn('Element authorsList not found');
+      return;
+    }
+    
+    if (authors.length === 0) {
+      authorsList.innerHTML = '<div class="text-muted">Авторы не найдены</div>';
+      return;
+    }
+    
+    authorsList.innerHTML = authors.map(author => 
+      `<div class="mb-2"><span class="badge bg-primary">${author}</span></div>`
+    ).join('');
+  } catch (error) {
+    console.error('Error loading authors:', error);
+    const authorsList = document.getElementById('authorsList');
+    if (authorsList) authorsList.innerHTML = '<div class="text-danger">Ошибка загрузки: ' + error.message + '</div>';
+  }
+}
+
+// Загрузка списка тем
+async function loadThemes() {
+  try {
+    console.log('Loading themes...');
+    const response = await fetch('/search/themes');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const themes = await response.json();
+    console.log('Themes loaded:', themes);
+    
+    const themesList = document.getElementById('themesList');
+    
+    if (!themesList) {
+      console.warn('Element themesList not found');
+      return;
+    }
+    
+    if (themes.length === 0) {
+      themesList.innerHTML = '<div class="text-muted">Темы не найдены</div>';
+      return;
+    }
+    
+    themesList.innerHTML = themes.map(theme => 
+      `<div class="mb-2"><span class="badge bg-success">${theme}</span></div>`
+    ).join('');
+  } catch (error) {
+    console.error('Error loading themes:', error);
+    const themesList = document.getElementById('themesList');
+    if (themesList) themesList.innerHTML = '<div class="text-danger">Ошибка загрузки: ' + error.message + '</div>';
+  }
+}
+
+// Инициализация страницы
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Search page loaded');
+  loadSearchStats();
+  loadAuthors();
+  loadThemes();
+});
+</script>

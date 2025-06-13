@@ -1,0 +1,276 @@
+<%# views/security.ejs %>
+<div class="row">
+  <div class="col-12">
+    <h2 class="mb-4"><i class="bi bi-shield-lock-fill me-2"></i>Безопасность системы</h2>
+
+    <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+      <div class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div><%= error %></div>
+      </div>
+    <% } %>
+
+    <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+      <div class="alert alert-success d-flex align-items-center" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <div><%= success %></div>
+      </div>
+    <% } %>
+
+    <!-- Статистика за 24 часа -->
+    <div class="row mb-4">
+      <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">Всего попыток</h6>
+                <h3 class="mb-0"><%= stats.last24h.total_attempts || 0 %></h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-graph-up fs-2"></i>
+              </div>
+            </div>
+            <small>За последние 24 часа</small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">Успешные входы</h6>
+                <h3 class="mb-0"><%= stats.last24h.successful_logins || 0 %></h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-check-circle fs-2"></i>
+              </div>
+            </div>
+            <small>За последние 24 часа</small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card bg-danger text-white">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">Неудачные попытки</h6>
+                <h3 class="mb-0"><%= stats.last24h.failed_attempts || 0 %></h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-x-circle fs-2"></i>
+              </div>
+            </div>
+            <small>За последние 24 часа</small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title">Активные сессии</h6>
+                <h3 class="mb-0"><%= stats.activeSessions || 0 %></h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-people fs-2"></i>
+              </div>
+            </div>
+            <small>В настоящий момент</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Заблокированные пользователи -->
+    <% if (stats.lockedUsers > 0) { %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+          <i class="bi bi-shield-x me-2"></i>
+          <div>
+            <strong>Внимание!</strong> В системе заблокировано пользователей: <%= stats.lockedUsers %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Управление безопасностью -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-unlock-fill me-2"></i>Разблокировка пользователя</h5>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="/security/unlock-user">
+              <div class="mb-3">
+                <label for="unlockUsername" class="form-label">Имя пользователя</label>
+                <input type="text" class="form-control" id="unlockUsername" name="username" 
+                       placeholder="Введите имя пользователя" required>
+              </div>
+              <button type="submit" class="btn btn-warning" onclick="return confirm('Разблокировать пользователя?')">
+                <i class="bi bi-unlock-fill me-1"></i>Разблокировать
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Действия безопасности</h5>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="/security/cleanup" class="mb-3">
+              <button type="submit" class="btn btn-info" onclick="return confirm('Выполнить очистку старых логов?')">
+                <i class="bi bi-trash3-fill me-1"></i>Очистить старые логи
+              </button>
+            </form>
+            
+            <button type="button" class="btn btn-secondary" onclick="refreshStats()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Обновить статистику
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Последние попытки входа -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Последние попытки входа</h5>
+          </div>
+          <div class="card-body">
+            <% if (stats.recentAttempts && stats.recentAttempts.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>Пользователь</th>
+                      <th>IP-адрес</th>
+                      <th>Результат</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% stats.recentAttempts.forEach(attempt => { %>
+                      <tr>
+                        <td>
+                          <small>
+                            <%= timeManager.formatForDisplay(attempt.timestamp) %><br>
+                            <span class="text-muted">(<%= timeManager.formatRelative(attempt.timestamp) %>)</span>
+                          </small>
+                        </td>
+                        <td>
+                          <span class="badge bg-secondary"><%= attempt.username || 'Неизвестен' %></span>
+                        </td>
+                        <td>
+                          <code><%= attempt.ip_address %></code>
+                        </td>
+                        <td>
+                          <% if (attempt.blocked) { %>
+                            <span class="badge bg-warning"><i class="bi bi-shield-x me-1"></i>Заблокирован</span>
+                          <% } else if (attempt.success) { %>
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Успешно</span>
+                          <% } else { %>
+                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Неудача</span>
+                          <% } %>
+                        </td>
+                        <td>
+                          <% if (attempt.username && !attempt.success) { %>
+                            <form method="POST" action="/security/logout-all/<%= attempt.username %>" style="display: inline;">
+                              <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                      onclick="return confirm('Завершить все сессии пользователя <%= attempt.username %>?')"
+                                      title="Завершить все сессии">
+                                <i class="bi bi-door-open"></i>
+                              </button>
+                            </form>
+                          <% } %>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div class="text-center text-muted">
+                <i class="bi bi-info-circle me-2"></i>Нет записей о попытках входа
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Информация о системе -->
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card bg-light">
+          <div class="card-body">
+            <h6 class="card-title"><i class="bi bi-clock me-1"></i>Временная зона</h6>
+            <% const tzInfo = timeManager.getTimezoneInfo(); %>
+            <p class="card-text mb-0">
+              <small class="text-muted">
+                <strong>Зона:</strong> <%= tzInfo.timezone %> (<%= tzInfo.offsetName %>)<br>
+                <strong>Локальное время:</strong> <%= tzInfo.localTime %><br>
+                <strong>UTC время:</strong> <%= tzInfo.utcTime %>
+              </small>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card bg-light">
+          <div class="card-body text-center">
+            <h6 class="card-title"><i class="bi bi-info-circle me-1"></i>Система</h6>
+            <p class="card-text mb-0">
+              <small class="text-muted">
+                Bahá'í Quote Bot Admin Panel v<%= version %>
+              </small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function refreshStats() {
+  const btn = event.target;
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Обновление...';
+  
+  // Обновляем страницу через секунду
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
+}
+
+// Автообновление каждые 30 секунд
+setInterval(() => {
+  fetch('/security/api/stats')
+    .then(response => response.json())
+    .then(data => {
+      // Обновляем счетчики без перезагрузки страницы
+      console.log('[SECURITY] Stats updated:', data);
+      // Здесь можно добавить обновление DOM элементов
+    })
+    .catch(error => {
+      console.error('[SECURITY] Error updating stats:', error);
+    });
+}, 30000);
+</script> 

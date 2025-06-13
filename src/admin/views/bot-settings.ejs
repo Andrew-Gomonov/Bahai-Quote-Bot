@@ -1,0 +1,457 @@
+<!-- Notification Container -->
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;"></div>
+
+<ul class="nav nav-tabs mb-4">
+  <li class="nav-item">
+    <a class="nav-link <% if (typeof currentPage !== 'undefined' && currentPage === 'status') { %>active<% } %>" href="/bot">Управление процессом</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link <% if (typeof currentPage !== 'undefined' && currentPage === 'settings') { %>active<% } %>" href="/bot/settings">Настройки</a>
+  </li>
+</ul>
+
+<h2>Настройки бота и OpenAI</h2>
+
+<% if (currentUser && currentUser.role !== 'guest') { %>
+
+<!-- Flash Messages -->
+<% 
+const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+const errorMsg = urlParams.get('error');
+const successMsg = urlParams.get('success');
+%>
+
+<script>
+// Notification System
+function showNotification(type, title, message, duration = 5000) {
+  const container = document.getElementById('notification-container');
+  if (!container) return;
+  
+  const notificationId = 'notif-' + Date.now();
+  
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.id = notificationId;
+  
+  const alertClass = {
+    'success': 'alert-success',
+    'error': 'alert-danger', 
+    'warning': 'alert-warning',
+    'info': 'alert-info',
+    'loading': 'alert-primary'
+  }[type] || 'alert-info';
+  
+  const icon = {
+    'success': 'bi-check-circle-fill',
+    'error': 'bi-exclamation-triangle-fill',
+    'warning': 'bi-exclamation-triangle-fill', 
+    'info': 'bi-info-circle-fill',
+    'loading': 'bi-hourglass-split'
+  }[type] || 'bi-info-circle-fill';
+  
+  notification.innerHTML = `
+    <div class="alert ${alertClass} alert-dismissible">
+      <div class="d-flex align-items-start">
+        <i class="bi ${icon} me-2 mt-1 fs-5"></i>
+        <div class="flex-grow-1">
+          <div class="fw-bold">${title}</div>
+          <div class="small">${message}</div>
+          ${type === 'loading' ? '<div class="progress mt-2" style="height: 4px;"><div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div></div>' : ''}
+        </div>
+        <button type="button" class="btn-close" onclick="hideNotification('${notificationId}')"></button>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(notification);
+  
+  if (duration > 0) {
+    setTimeout(() => hideNotification(notificationId), duration);
+  }
+  
+  return notificationId;
+}
+
+function hideNotification(notificationId) {
+  const notification = document.getElementById(notificationId);
+  if (notification) {
+    notification.classList.add('hiding');
+    setTimeout(() => notification.remove(), 300);
+  }
+}
+
+// Получаем параметры из URL для отображения сообщений
+const urlParams = new URLSearchParams(window.location.search);
+const errorMsg = urlParams.get('error');
+const successMsg = urlParams.get('success');
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (errorMsg) {
+    showNotification('error', 'Ошибка', decodeURIComponent(errorMsg), 8000);
+    // Убираем параметр из URL
+    urlParams.delete('error');
+    window.history.replaceState({}, '', window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : ''));
+  }
+
+  if (successMsg) {
+    showNotification('success', 'Успешно!', decodeURIComponent(successMsg), 6000);
+    // Убираем параметр из URL
+    urlParams.delete('success');
+    window.history.replaceState({}, '', window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : ''));
+  }
+});
+
+// Enhanced form submission with loading states
+function submitFormWithLoading(form, button, loadingText, successText) {
+  const originalText = button.innerHTML;
+  const spinner = button.querySelector('.spinner-border') || document.createElement('span');
+  
+  if (!button.querySelector('.spinner-border')) {
+    spinner.className = 'spinner-border spinner-border-sm me-2';
+    spinner.setAttribute('role', 'status');
+    button.insertBefore(spinner, button.firstChild);
+  }
+  
+  button.disabled = true;
+  button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${loadingText}`;
+  
+  const loadingNotifId = showNotification('loading', loadingText, 'Пожалуйста, подождите...', 0);
+  
+  // Submit form
+  form.submit();
+  
+  // Restore button after delay (will be overridden by page reload anyway)
+  setTimeout(() => {
+    button.disabled = false;
+    button.innerHTML = originalText;
+    hideNotification(loadingNotifId);
+  }, 3000);
+}
+
+// Функция для прокрутки к настройкам
+function scrollToSettings() {
+  document.querySelector('.card:nth-of-type(2)').scrollIntoView({ 
+    behavior: 'smooth',
+    block: 'start'
+  });
+}
+</script>
+
+<style>
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.notification {
+  animation: slideInRight 0.5s ease-out;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: none;
+}
+
+.notification.hiding {
+  animation: slideOutRight 0.3s ease-in forwards;
+}
+
+.notification .alert {
+  margin-bottom: 0;
+  border-radius: 8px;
+}
+
+.form-enhanced {
+  transition: all 0.3s ease;
+}
+
+.form-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.form-switch-lg .form-check-input {
+  width: 3rem;
+  height: 1.5rem;
+  background-size: contain;
+}
+
+.form-switch-lg .form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.switch-text {
+  transition: all 0.3s ease;
+}
+
+.card.form-enhanced:hover .form-switch .form-check-input {
+  transform: scale(1.05);
+}
+</style>
+
+<!-- .env File Status Card -->
+<div class="card mb-4">
+  <div class="card-header <% if (envFileExists) { %>bg-success text-white<% } else { %>bg-warning text-dark<% } %>">
+    <i class="bi bi-file-earmark-text-fill"></i> Состояние файла конфигурации (.env)
+  </div>
+  <div class="card-body">
+    <% if (envFileExists) { %>
+      <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <div>
+          <strong>Файл .env найден</strong><br>
+          <small class="text-muted">Путь: <code><%= envFilePath %></code></small>
+        </div>
+      </div>
+      <p class="mb-0">
+        <i class="bi bi-info-circle-fill me-1"></i>
+        <strong>Автообновление:</strong> Изменения настроек автоматически сохраняются в файл .env и сразу отображаются на странице без перезапуска панели.
+      </p>
+         <% } else { %>
+       <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+         <i class="bi bi-exclamation-triangle-fill me-2"></i>
+         <div>
+           <strong>Файл .env не найден</strong><br>
+           <small>Для изменения настроек необходим файл конфигурации</small>
+         </div>
+       </div>
+       <p class="mb-3">
+         <i class="bi bi-info-circle-fill me-1"></i>
+         <strong>Решение:</strong> Создайте файл .env через первичную настройку (/setup) или введите настройки ниже - файл будет создан автоматически.
+       </p>
+       <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+         <a href="/setup" class="btn btn-success">
+           <i class="bi bi-tools"></i> Первичная настройка
+         </a>
+         <button type="button" class="btn btn-outline-primary" onclick="scrollToSettings()">
+           <i class="bi bi-arrow-down"></i> Настроить здесь
+         </button>
+       </div>
+     <% } %>
+  </div>
+</div>
+<!-- Settings Card -->
+<div class="card mb-4 form-enhanced">
+  <div class="card-header">
+    <i class="bi bi-gear-fill"></i> Настройки бота и OpenAI
+  </div>
+  <div class="card-body">
+    <% if (!envFileExists) { %>
+    <div class="alert alert-info mb-3" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      <strong>Автоматическое создание:</strong> При сохранении настроек файл .env будет создан автоматически с базовой конфигурацией.
+    </div>
+    <% } %>
+    
+    <h5 class="card-title"><i class="bi bi-key-fill"></i> BOT_TOKEN</h5>
+    <form id="token-form" method="POST" action="/bot/update-token" class="row g-2 align-items-center mb-3">
+      <div class="col">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-shield-lock-fill"></i></span>
+          <input type="password" name="token" class="form-control" placeholder="Новый BOT_TOKEN" value="<%= currentToken %>" required>
+          <button class="btn btn-outline-secondary" type="button" onclick="toggleTokenVisibility(this)">
+            <i class="bi bi-eye-fill"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-auto">
+        <button type="button" class="btn btn-primary" onclick="submitFormWithLoading(document.getElementById('token-form'), this, 'Сохранение токена...', 'Токен сохранен')">
+          <i class="bi bi-save me-1"></i>Сохранить
+        </button>
+      </div>
+    </form>
+    
+    <hr />
+    
+    <h5 class="card-title"><i class="bi bi-robot"></i> OpenAI</h5>
+    <form id="openai-form" method="POST" action="/bot/gpt/update" class="row g-3 align-items-center">
+      <div class="col-12 col-md-6">
+        <label for="openai_api_key" class="form-label">
+          <i class="bi bi-key-fill me-1"></i>API Key
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+          <input type="password" id="openai_api_key" name="api_key" class="form-control" placeholder="OPENAI_API_KEY" value="<%= openaiKey %>">
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('openai_api_key', this)">
+            <i class="bi bi-eye-fill"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="col-12 col-md-6">
+        <label for="openai_api_base_url" class="form-label">
+          <i class="bi bi-globe me-1"></i>API Base URL
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+          <input type="url" id="openai_api_base_url" name="api_base_url" class="form-control" placeholder="https://api.llm7.io/v1" value="<%= openaiBaseUrl %>">
+        </div>
+      </div>
+      
+      <div class="col-sm-6 col-md-3">
+        <label for="openai_model" class="form-label">
+          <i class="bi bi-cpu-fill me-1"></i>Модель
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-chip"></i></span>
+          <input type="text" id="openai_model" name="model" class="form-control" placeholder="gpt-4o" value="<%= openaiModel %>">
+        </div>
+      </div>
+      
+      <div class="col-sm-6 col-md-2">
+        <label for="openai_max_tokens" class="form-label">
+          <i class="bi bi-speedometer2 me-1"></i>Макс. токенов
+        </label>
+        <div class="input-group">
+          <span class="input-group-text">#</span>
+          <input type="number" id="openai_max_tokens" name="max_tokens" class="form-control" placeholder="200" value="<%= openaiMaxTokens %>" min="1" max="4096">
+        </div>
+      </div>
+      
+      <div class="col-12 col-md-auto align-self-end">
+        <button type="button" class="btn btn-primary w-100" onclick="submitFormWithLoading(document.getElementById('openai-form'), this, 'Сохранение настроек...', 'Настройки сохранены')">
+          <i class="bi bi-save me-1"></i>Сохранить настройки OpenAI
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Notification Settings Card -->
+<div class="card mb-4 form-enhanced">
+  <div class="card-header">
+    <i class="bi bi-bell-fill"></i> Настройки уведомлений
+  </div>
+  <div class="card-body">
+    <h5 class="card-title"><i class="bi bi-chat-dots-fill"></i> Telegram уведомления</h5>
+    <p class="text-muted mb-3">
+      <i class="bi bi-info-circle-fill me-1"></i>
+      Администраторы бота будут получать уведомления о запуске, остановке и перезапуске бота через Telegram.
+    </p>
+    
+    <form id="notifications-form" method="POST" action="/bot/notifications/update" class="row g-3 align-items-center">
+      <div class="col-auto">
+        <div class="form-check form-switch form-switch-lg">
+          <input 
+            type="checkbox" 
+            class="form-check-input" 
+            id="admin_notifications" 
+            name="admin_notifications"
+            <% if (adminNotifications) { %>checked<% } %>
+            onchange="updateSwitchLabel(this)"
+          >
+          <label class="form-check-label fw-bold" for="admin_notifications" id="switch-label">
+            <span class="switch-text">
+              <% if (adminNotifications) { %>
+                <i class="bi bi-bell-fill text-success me-1"></i>Уведомления включены
+              <% } else { %>
+                <i class="bi bi-bell-slash-fill text-muted me-1"></i>Уведомления отключены
+              <% } %>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="col-auto">
+        <button type="button" class="btn btn-primary" onclick="submitFormWithLoading(document.getElementById('notifications-form'), this, 'Сохранение настроек...', 'Настройки уведомлений обновлены')">
+          <i class="bi bi-save me-1"></i>Сохранить
+        </button>
+      </div>
+    </form>
+    
+    <hr class="my-3">
+    
+    <div class="alert alert-info mb-0" role="alert">
+      <i class="bi bi-lightbulb-fill me-2"></i>
+      <strong>Как это работает:</strong>
+      <ul class="mb-0 mt-2">
+        <li>Уведомления отправляются всем администраторам, добавленным в раздел "Администраторы"</li>
+        <li>Сообщения содержат статус операции, время и дополнительную информацию</li>
+        <li>При включении уведомлений отправляется тестовое сообщение</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Panel Control Card -->
+<div class="card border-danger mb-4">
+  <div class="card-header bg-danger text-white">
+    <i class="bi bi-exclamation-triangle-fill"></i> Управление панелью администратора
+  </div>
+  <div class="card-body text-danger">
+    <p class="card-text">Это действие остановит всю веб-панель администратора. Потребуется перезапуск процесса вручную на сервере.</p>
+    <form method="POST" action="/bot/panel/stop" onsubmit="return confirm('Вы уверены, что хотите остановить веб-панель? Это действие необратимо через интерфейс.');">
+      <button type="submit" class="btn btn-danger"><i class="bi bi-power"></i> Выключить панель</button>
+    </form>
+  </div>
+</div> 
+<% } else { %>
+<div class="alert alert-info" role="alert">
+  <i class="bi bi-info-circle-fill me-2"></i>Настройки бота и управление панелью доступны только администраторам.
+</div>
+<% } %> 
+
+<script>
+function togglePasswordVisibility(inputId, button) {
+  const input = document.getElementById(inputId);
+  const icon = button.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'bi bi-eye-slash-fill';
+  } else {
+    input.type = 'password';
+    icon.className = 'bi bi-eye-fill';
+  }
+}
+
+function toggleTokenVisibility(button) {
+  const input = button.parentElement.querySelector('input');
+  const icon = button.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'bi bi-eye-slash-fill';
+  } else {
+    input.type = 'password';
+    icon.className = 'bi bi-eye-fill';
+  }
+}
+
+function updateSwitchLabel(checkbox) {
+  const label = document.getElementById('switch-label');
+  const switchText = label.querySelector('.switch-text');
+  
+  if (checkbox.checked) {
+    switchText.innerHTML = '<i class="bi bi-bell-fill text-success me-1"></i>Уведомления включены';
+  } else {
+    switchText.innerHTML = '<i class="bi bi-bell-slash-fill text-muted me-1"></i>Уведомления отключены';
+  }
+  
+  // Небольшая анимация
+  switchText.style.transform = 'scale(0.95)';
+  setTimeout(() => {
+    switchText.style.transform = 'scale(1)';
+  }, 150);
+}
+</script> 

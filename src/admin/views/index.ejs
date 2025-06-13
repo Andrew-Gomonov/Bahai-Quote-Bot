@@ -1,0 +1,387 @@
+<%# views/index.ejs %>
+<div class="row">
+  <div class="col-12">
+    <h2 class="mb-4">
+      <i class="bi bi-speedometer2 me-2"></i>Главная панель
+    </h2>
+
+    <!-- Информация о пользователе -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">
+              <i class="bi bi-person-circle me-2"></i>Добро пожаловать, <%= user.username %>!
+            </h5>
+            <p class="card-text">
+              <strong>Роль:</strong> 
+              <% if (user.role === 'super') { %>
+                <span class="badge bg-danger">Супер-администратор</span>
+              <% } else if (user.role === 'admin') { %>
+                <span class="badge bg-warning">Администратор</span>
+              <% } else { %>
+                <span class="badge bg-info">Гость</span>
+              <% } %>
+            </p>
+            <% if (user.last_login_at) { %>
+            <p class="card-text">
+              <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>Последний вход: 
+                <%= timeManager.formatForDisplay(user.last_login_at) %>
+                <span class="text-muted">(<%= timeManager.formatRelative(user.last_login_at) %>)</span>
+              </small>
+            </p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="bi bi-shield-fill text-success fs-1"></i>
+            <h6 class="card-title mt-2">Система защищена</h6>
+            <p class="card-text">
+              <small class="text-muted">Активна защита от брутфорса</small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h4 class="mb-3"><i class="bi bi-lightning-fill me-2"></i>Быстрые действия</h4>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="dropdown">
+          <button class="btn btn-link text-decoration-none p-0 w-100" type="button" data-bs-toggle="dropdown">
+            <div class="card h-100 border-primary">
+              <div class="card-body text-center">
+                <i class="bi bi-blockquote-left text-primary fs-1"></i>
+                <h6 class="card-title mt-2">Цитаты</h6>
+                <p class="card-text"><small class="text-muted">Управление цитатами</small></p>
+              </div>
+            </div>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/quotes"><i class="bi bi-list me-2"></i>Просмотр всех</a></li>
+            <% if (user.role !== 'guest') { %>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addQuoteModal"><i class="bi bi-plus-circle me-2"></i>Добавить цитату</button></li>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importQuotesModal"><i class="bi bi-upload me-2"></i>Импорт цитат</button></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="dropdown">
+          <button class="btn btn-link text-decoration-none p-0 w-100" type="button" data-bs-toggle="dropdown">
+            <div class="card h-100 border-success">
+              <div class="card-body text-center">
+                <i class="bi bi-megaphone-fill text-success fs-1"></i>
+                <h6 class="card-title mt-2">Рассылки</h6>
+                <p class="card-text"><small class="text-muted">Создать рассылку</small></p>
+              </div>
+            </div>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/broadcasts"><i class="bi bi-list me-2"></i>Просмотр всех</a></li>
+            <% if (user.role !== 'guest') { %>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#newPushModal"><i class="bi bi-send-plus-fill me-2"></i>PUSH рассылка</button></li>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#newWeeklyModal"><i class="bi bi-calendar-week-fill me-2"></i>Weekly рассылка</button></li>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#newDailyModal"><i class="bi bi-calendar-day-fill me-2"></i>Daily рассылка</button></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <div class="dropdown">
+          <button class="btn btn-link text-decoration-none p-0 w-100" type="button" data-bs-toggle="dropdown">
+            <div class="card h-100 border-info">
+              <div class="card-body text-center">
+                <i class="bi bi-people-fill text-info fs-1"></i>
+                <h6 class="card-title mt-2">Пользователи</h6>
+                <p class="card-text"><small class="text-muted">Управление пользователями</small></p>
+              </div>
+            </div>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/users"><i class="bi bi-list me-2"></i>Просмотр всех</a></li>
+            <% if (user.role !== 'guest') { %>
+            <li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-person-plus-fill me-2"></i>Добавить пользователя</button></li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <a href="/bot" class="text-decoration-none">
+          <div class="card h-100 border-warning">
+            <div class="card-body text-center">
+              <i class="bi bi-robot text-warning fs-1"></i>
+              <h6 class="card-title mt-2">Настройки бота</h6>
+              <p class="card-text"><small class="text-muted">Конфигурация бота</small></p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Дополнительные функции для администраторов -->
+    <% if (user.role === 'super' || user.role === 'admin') { %>
+    <div class="row">
+      <div class="col-12">
+        <h4 class="mb-3"><i class="bi bi-gear-fill me-2"></i>Администрирование</h4>
+      </div>
+      
+      <div class="col-md-4 mb-3">
+        <a href="/admins" class="text-decoration-none">
+          <div class="card border-secondary">
+            <div class="card-body text-center">
+              <i class="bi bi-shield-lock-fill text-secondary fs-2"></i>
+              <h6 class="card-title mt-2">Админы</h6>
+              <p class="card-text"><small class="text-muted">Управление администраторами</small></p>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <% if (user.role === 'super') { %>
+      <div class="col-md-4 mb-3">
+        <a href="/security" class="text-decoration-none">
+          <div class="card border-danger">
+            <div class="card-body text-center">
+              <i class="bi bi-shield-fill text-danger fs-2"></i>
+              <h6 class="card-title mt-2">Безопасность</h6>
+              <p class="card-text"><small class="text-muted">Мониторинг безопасности</small></p>
+            </div>
+          </div>
+        </a>
+      </div>
+      <% } %>
+      
+      <div class="col-md-4 mb-3">
+        <a href="/change-credentials" class="text-decoration-none">
+          <div class="card border-warning">
+            <div class="card-body text-center">
+              <i class="bi bi-key-fill text-warning fs-2"></i>
+              <h6 class="card-title mt-2">Учетные данные</h6>
+              <p class="card-text"><small class="text-muted">Изменить пароль</small></p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Информация о версии -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card bg-light">
+          <div class="card-body text-center">
+            <p class="card-text mb-0">
+              <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Bahá'í Quote Bot Admin Panel v<%= version %>
+              </small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНЫЕ ОКНА -->
+
+<% if (user.role !== 'guest') { %>
+<!-- Модальные окна для цитат -->
+<!-- Add quote modal -->
+<div class="modal fade" id="addQuoteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/quotes">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-square-fill me-2"></i>Новая цитата</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><textarea name="text" class="form-control" rows="6" required placeholder="Введите текст цитаты..."></textarea></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-check-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Import quotes modal -->
+<div class="modal fade" id="importQuotesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/quotes/import" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-file-earmark-arrow-up-fill me-2"></i>Импорт цитат</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="quotesFile" class="form-label">JSON файл с цитатами</label>
+            <input type="file" class="form-control" id="quotesFile" name="quotesFile" accept=".json" required>
+            <div class="form-text">Ожидаемый формат: массив объектов, каждый объект с ключом "text". Например: <code>[{"text": "Первая цитата..."}, {"text": "Вторая цитата..."}]</code></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Загрузить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Модальные окна для рассылок -->
+<!-- New PUSH modal -->
+<div class="modal fade" id="newPushModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/broadcasts/push">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-send-plus-fill me-2"></i>Новая PUSH рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-calendar-date me-1"></i>Дата</label><input type="date" name="date" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="pushUseGpt" name="use_gpt">
+            <label class="form-check-label" for="pushUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- New Weekly modal -->
+<div class="modal fade" id="newWeeklyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/broadcasts/weekly">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-week-fill me-2"></i>Новая Weekly рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-calendar-day me-1"></i>День недели</label>
+              <select name="day" class="form-select">
+                <option value="1">Понедельник</option><option value="2">Вторник</option><option value="3">Среда</option><option value="4">Четверг</option><option value="5">Пятница</option><option value="6">Суббота</option><option value="7">Воскресенье</option>
+              </select>
+            </div>
+            <div class="col-md-6"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="weeklyUseGpt" name="use_gpt">
+            <label class="form-check-label" for="weeklyUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT (каждую неделю будет новый)</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- New Daily modal -->
+<div class="modal fade" id="newDailyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="/broadcasts/daily">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-day-fill me-2"></i>Новая Daily рассылка</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="row g-2 mb-3">
+            <div class="col"><label class="form-label"><i class="bi bi-clock me-1"></i>Время</label><input type="time" name="time" class="form-control" required></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Сообщение</label>
+            <textarea name="message" class="form-control" rows="4" placeholder="Оставьте пустым, если хотите сгенерировать через ChatGPT (см. ниже)"></textarea>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="dailyUseGpt" name="use_gpt">
+            <label class="form-check-label" for="dailyUseGpt"><i class="bi bi-robot me-1"></i>Сгенерировать текст через ChatGPT (каждый день будет новый)</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-card-text me-1"></i>Промпт для ChatGPT (опционально)</label>
+            <textarea name="gpt_prompt" class="form-control" rows="3" placeholder="Если пусто, используется промпт по умолчанию..."></textarea>
+          </div>
+          <div>
+            <label class="form-label"><i class="bi bi-image me-1"></i>Ссылка/ID картинки (опционально)</label>
+            <input type="text" name="image" class="form-control" placeholder="URL изображения или Telegram File ID" />
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Модальные окна для пользователей -->
+<!-- Add user modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/users">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-person-plus-fill me-2"></i>Новый пользователь</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="add_chat_id" class="form-label"><i class="bi bi-key-fill me-1"></i>Telegram chat_id</label>
+            <input type="number" id="add_chat_id" name="chat_id" class="form-control" placeholder="Например: 123456789" required>
+          </div>
+          <div class="mb-3">
+            <label for="add_timezone" class="form-label"><i class="bi bi-clock-history me-1"></i>Timezone</label>
+            <input type="text" id="add_timezone" name="timezone" class="form-control" placeholder="Например: Europe/Chisinau">
+            <div class="form-text">Список таймзон: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">Wikipedia</a></div>
+          </div>
+          <div class="mb-3">
+            <label for="add_daily_time" class="form-label"><i class="bi bi-alarm-fill me-1"></i>Время ежедневной рассылки</label>
+            <input type="time" id="add_daily_time" name="daily_time" class="form-control" placeholder="Например: 09:00">
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill me-1"></i>Добавить</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<script>
+// Показываем приветственное сообщение при первом входе
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('welcome') === 'true') {
+    setTimeout(() => {
+      alert('Добро пожаловать в панель администратора Bahá\'í Quote Bot!');
+    }, 500);
+  }
+});
+</script> 

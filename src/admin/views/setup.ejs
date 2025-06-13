@@ -1,0 +1,253 @@
+<%# views/setup.ejs %>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6 col-xl-5">
+    <div class="card shadow-lg border-0 rounded-lg mt-3">
+      <div class="card-header bg-success text-white text-center py-4">
+        <h2 class="card-title mb-0 fs-3">
+          <i class="bi bi-gear-fill me-2"></i>Первичная настройка
+        </h2>
+        <p class="mb-0 mt-2">Добро пожаловать! Настройте систему для первого использования</p>
+      </div>
+      <div class="card-body p-4 p-md-5">
+        <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div><%= error %></div>
+          </div>
+        <% } %>
+
+        <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+          <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div><%= success %></div>
+          </div>
+        <% } %>
+
+        <div class="alert alert-info d-flex align-items-start" role="alert">
+          <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+          <div>
+            <strong>Первичная настройка:</strong><br>
+            Создайте учетную запись главного администратора для доступа к веб-панели управления ботом.
+            Система автоматически создаст файл <code>.env</code> с базовой конфигурацией.
+            Эта страница будет доступна только до создания первого администратора.
+          </div>
+        </div>
+
+        <form method="POST" action="/setup">
+          <h5 class="text-primary mb-3">
+            <i class="bi bi-person-plus-fill me-1"></i>Создание администратора
+          </h5>
+          
+          <div class="mb-3">
+            <label for="username" class="form-label">
+              <i class="bi bi-person-fill me-1"></i>Имя пользователя *
+            </label>
+            <input type="text" class="form-control form-control-lg" id="username" name="username" 
+                   required autofocus minlength="3" 
+                   placeholder="Введите имя пользователя (минимум 3 символа)">
+            <div class="form-text">Это имя будет использоваться для входа в веб-панель</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="password" class="form-label">
+              <i class="bi bi-lock-fill me-1"></i>Пароль *
+            </label>
+            <div class="input-group">
+              <input type="password" class="form-control form-control-lg" id="password" name="password" 
+                     required minlength="8"
+                     placeholder="Введите надежный пароль">
+              <span class="input-group-text password-toggle-btn" title="Показать/скрыть пароль">
+                <i class="bi bi-eye-slash-fill"></i>
+              </span>
+            </div>
+            <div class="password-strength-meter mt-2">
+              <div class="password-strength-meter-bar" id="passwordStrengthBar"></div>
+            </div>
+            <div class="password-strength-text" id="passwordStrengthText"></div>
+            <div class="form-text">
+              Пароль должен содержать: минимум 8 символов, заглавные и строчные буквы, цифры и специальные символы
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <label for="confirmPassword" class="form-label">
+              <i class="bi bi-shield-fill me-1"></i>Подтверждение пароля *
+            </label>
+            <div class="input-group">
+              <input type="password" class="form-control form-control-lg" id="confirmPassword" name="confirmPassword" 
+                     required minlength="8"
+                     placeholder="Повторите пароль">
+              <span class="input-group-text password-toggle-btn" title="Показать/скрыть пароль">
+                <i class="bi bi-eye-slash-fill"></i>
+              </span>
+            </div>
+            <div id="passwordMatchMessage" class="form-text"></div>
+          </div>
+
+          <hr class="my-4">
+
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-robot me-1"></i>Настройки бота (опционально)
+          </h5>
+          
+          <div class="mb-4">
+            <label for="botToken" class="form-label">
+              <i class="bi bi-key-fill me-1"></i>Токен Telegram бота
+            </label>
+            <input type="text" class="form-control form-control-lg" id="botToken" name="botToken" 
+                   placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz (необязательно)"
+                   pattern="[0-9]+:[A-Za-z0-9_-]+">
+            <div class="form-text">
+              <strong>Автоматическое создание .env:</strong> Если введете токен, он будет автоматически добавлен в файл .env.
+              Если оставите пустым, можете добавить токен позже, отредактировав созданный файл .env.
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+              <i class="bi bi-check-circle-fill me-1"></i>Завершить настройку
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <small class="text-muted">Bahá'í Quote Bot v<%= version %></small>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Password visibility toggle
+  const toggleButtons = document.querySelectorAll('.password-toggle-btn');
+  toggleButtons.forEach(button => {
+    button.addEventListener('click', function () {
+      const passwordInput = this.parentElement.querySelector('input[type="password"], input[type="text"]');
+      const icon = this.querySelector('i');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('bi-eye-slash-fill');
+        icon.classList.add('bi-eye-fill');
+      } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('bi-eye-fill');
+        icon.classList.add('bi-eye-slash-fill');
+      }
+    });
+  });
+
+  // Password strength meter
+  const passwordInput = document.getElementById('password');
+  const strengthBar = document.getElementById('passwordStrengthBar');
+  const strengthText = document.getElementById('passwordStrengthText');
+  
+  function checkPasswordStrength(password) {
+    let strength = 0;
+    let feedback = [];
+    
+    if (password.length >= 8) strength += 1;
+    else feedback.push('минимум 8 символов');
+    
+    if (/[a-z]/.test(password)) strength += 1;
+    else feedback.push('строчные буквы');
+    
+    if (/[A-Z]/.test(password)) strength += 1;
+    else feedback.push('заглавные буквы');
+    
+    if (/[0-9]/.test(password)) strength += 1;
+    else feedback.push('цифры');
+    
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    else feedback.push('спец. символы');
+    
+    return { strength, feedback };
+  }
+  
+  passwordInput.addEventListener('input', function () {
+    const password = this.value;
+    const result = checkPasswordStrength(password);
+    
+    // Update strength bar
+    const percentage = (result.strength / 5) * 100;
+    strengthBar.style.width = percentage + '%';
+    
+    // Update colors and text
+    strengthBar.className = 'password-strength-meter-bar';
+    if (result.strength <= 2) {
+      strengthBar.classList.add('strength-weak');
+      strengthText.textContent = 'Слабый пароль';
+      strengthText.className = 'password-strength-text text-danger';
+    } else if (result.strength === 3) {
+      strengthBar.classList.add('strength-medium');
+      strengthText.textContent = 'Средний пароль';
+      strengthText.className = 'password-strength-text text-warning';
+    } else if (result.strength === 4) {
+      strengthBar.classList.add('strength-good');
+      strengthText.textContent = 'Хороший пароль';
+      strengthText.className = 'password-strength-text text-info';
+    } else {
+      strengthBar.classList.add('strength-strong');
+      strengthText.textContent = 'Сильный пароль';
+      strengthText.className = 'password-strength-text text-success';
+    }
+    
+    if (result.feedback.length > 0) {
+      strengthText.textContent += ' (нужны: ' + result.feedback.join(', ') + ')';
+    }
+  });
+
+  // Password confirmation validation
+  const confirmPasswordInput = document.getElementById('confirmPassword');
+  const passwordMatchMessage = document.getElementById('passwordMatchMessage');
+  
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (confirmPassword === '') {
+      passwordMatchMessage.textContent = '';
+      passwordMatchMessage.className = 'form-text';
+      return;
+    }
+    
+    if (password === confirmPassword) {
+      passwordMatchMessage.textContent = '✓ Пароли совпадают';
+      passwordMatchMessage.className = 'form-text text-success';
+    } else {
+      passwordMatchMessage.textContent = '✗ Пароли не совпадают';
+      passwordMatchMessage.className = 'form-text text-danger';
+    }
+  }
+  
+  passwordInput.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+  // Form validation
+  const form = document.querySelector('form');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  form.addEventListener('submit', function(e) {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const result = checkPasswordStrength(password);
+    
+    if (result.strength < 5) {
+      e.preventDefault();
+      alert('Пароль не соответствует требованиям безопасности. Пожалуйста, используйте более сильный пароль.');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      e.preventDefault();
+      alert('Пароли не совпадают.');
+      return;
+    }
+    
+    // Disable submit button to prevent double submission
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Настройка...';
+  });
+});
+</script> 

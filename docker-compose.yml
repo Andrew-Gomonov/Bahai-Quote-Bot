@@ -1,0 +1,15 @@
+version: '3'
+services:
+  bot:
+    build: .
+    container_name: bahai-quote-bot
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - COOLDOWN_SEC=30
+      - ADMIN_PORT=3000
+      - DB_PATH=bot.db
+    volumes:
+      - ./data:/app
+    ports:
+      - "3000:3000"
+    restart: unless-stopped 

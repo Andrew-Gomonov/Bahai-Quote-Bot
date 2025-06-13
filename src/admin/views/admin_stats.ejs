@@ -1,0 +1,300 @@
+<h2 class="mb-4"><i class="bi bi-graph-up-arrow me-2"></i>Статистика и аналитика</h2>
+
+<!-- Общие метрики -->
+<div class="row mb-4">
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-primary">
+      <div class="card-body text-center">
+        <div class="display-4 text-primary mb-2"><i class="bi bi-people-fill"></i></div>
+        <h4 class="display-6"><%= stats.totalUsers %></h4>
+        <p class="text-muted mb-0 small">Всего пользователей</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-success">
+      <div class="card-body text-center">
+        <div class="display-4 text-success mb-2"><i class="bi bi-person-check-fill"></i></div>
+        <h4 class="display-6"><%= stats.activeUsers %></h4>
+        <p class="text-muted mb-0 small">Активных за месяц</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-warning">
+      <div class="card-body text-center">
+        <div class="display-4 text-warning mb-2"><i class="bi bi-book-fill"></i></div>
+        <h4 class="display-6"><%= stats.totalReads %></h4>
+        <p class="text-muted mb-0 small">Прочитано цитат</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-danger">
+      <div class="card-body text-center">
+        <div class="display-4 text-danger mb-2"><i class="bi bi-heart-fill"></i></div>
+        <h4 class="display-6"><%= stats.totalFavorites %></h4>
+        <p class="text-muted mb-0 small">В избранном</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-info">
+      <div class="card-body text-center">
+        <div class="display-4 text-info mb-2"><i class="bi bi-quote"></i></div>
+        <h4 class="display-6"><%= stats.totalQuotes %></h4>
+        <p class="text-muted mb-0 small">Цитат в базе</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-2 col-md-4 col-6 mb-3">
+    <div class="card border-secondary">
+      <div class="card-body text-center">
+        <div class="display-4 text-secondary mb-2"><i class="bi bi-server"></i></div>
+        <h4 class="display-6"><%= Math.round((Date.now() - Date.parse('2024-01-01')) / (1000 * 60 * 60 * 24)) %></h4>
+        <p class="text-muted mb-0 small">Дней работы</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Графики -->
+<div class="row mb-4">
+  <!-- График активности по дням -->
+  <div class="col-lg-8 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Активность чтения (последние 30 дней)</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="dailyActivityChart" style="max-height: 300px;"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Распределение по уровням -->
+  <div class="col-lg-4 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-trophy-fill me-2"></i>Распределение по уровням</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="levelsChart" style="max-height: 300px;"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Топ пользователей -->
+<div class="row mb-4">
+  <div class="col-lg-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-award-fill me-2"></i>Топ читателей</h5>
+      </div>
+      <div class="card-body">
+        <% if (stats.topUsers.length > 0) { %>
+          <div class="list-group list-group-flush">
+            <% stats.topUsers.forEach((user, index) => { %>
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="d-flex align-items-center">
+                    <span class="badge <%= index === 0 ? 'bg-warning' : index === 1 ? 'bg-secondary' : index === 2 ? 'bg-light text-dark' : 'bg-light text-dark' %> me-2">
+                      <%= index + 1 %>
+                    </span>
+                    <div>
+                      <strong>ID: <%= user.chat_id %></strong>
+                      <br>
+                      <small class="text-muted">
+                        🎖️ <%= LEVELS[user.level] ? LEVELS[user.level].name : 'Неизвестно' %> (ур. <%= user.level %>) 
+                        • ⭐ <%= user.experience %> опыта
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-end">
+                  <strong class="text-primary"><%= user.quotes_read_total %></strong> цитат
+                  <br>
+                  <small class="text-muted">🔥 <%= user.daily_streak %> дн.</small>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center">Пока нет активных читателей</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Популярные достижения -->
+  <div class="col-lg-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>Популярные достижения</h5>
+      </div>
+      <div class="card-body">
+        <% if (stats.achievements.length > 0) { %>
+          <div class="list-group list-group-flush">
+            <% stats.achievements.slice(0, 8).forEach((ach) => { %>
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong><%= ACHIEVEMENTS[ach.achievement_type] ? ACHIEVEMENTS[ach.achievement_type].name : ach.achievement_type %></strong>
+                  <% if (ACHIEVEMENTS[ach.achievement_type]) { %>
+                    <br>
+                    <small class="text-muted"><%= ACHIEVEMENTS[ach.achievement_type].description %></small>
+                  <% } %>
+                </div>
+                <span class="badge bg-primary rounded-pill"><%= ach.count %></span>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center">Пока нет полученных достижений</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Система уровней -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-ladder me-2"></i>Система уровней</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <% Object.entries(LEVELS).forEach(([level, info]) => { %>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+              <div class="card border-secondary h-100">
+                <div class="card-body text-center">
+                  <h6 class="card-title">Уровень <%= level %></h6>
+                  <h5 class="text-primary"><%= info.name %></h5>
+                  <p class="card-text">
+                    <small class="text-muted">
+                      💫 <%= info.exp %> опыта<br>
+                      📚 <%= info.quotes %> цитат
+                    </small>
+                  </p>
+                  <% if (stats.levelDistribution) { %>
+                    <% const levelStat = stats.levelDistribution.find(l => l.level == level) %>
+                    <% if (levelStat) { %>
+                      <span class="badge bg-info"><%= levelStat.count %> польз.</span>
+                    <% } else { %>
+                      <span class="badge bg-light text-dark">0 польз.</span>
+                    <% } %>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Подключаем Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// График активности по дням
+fetch('/stats/api/charts')
+  .then(response => response.json())
+  .then(data => {
+    // График ежедневной активности
+    const dailyCtx = document.getElementById('dailyActivityChart').getContext('2d');
+    const dailyLabels = data.daily.map(d => new Date(d.date).toLocaleDateString('ru-RU'));
+    const dailyReads = data.daily.map(d => d.reads);
+    const dailyUsers = data.daily.map(d => d.users);
+    
+    new Chart(dailyCtx, {
+      type: 'line',
+      data: {
+        labels: dailyLabels,
+        datasets: [
+          {
+            label: 'Прочитано цитат',
+            data: dailyReads,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            tension: 0.3,
+            fill: true
+          },
+          {
+            label: 'Активных пользователей',
+            data: dailyUsers,
+            borderColor: '#198754',
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+            tension: 0.3,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // График распределения по уровням
+    const levelsCtx = document.getElementById('levelsChart').getContext('2d');
+    const levelsData = <%- JSON.stringify(LEVELS) %>;
+    const levelLabels = data.levels.map(l => {
+      const levelInfo = levelsData[l.level];
+      return levelInfo ? `${l.level}. ${levelInfo.name}` : `Ур. ${l.level}`;
+    });
+    const levelCounts = data.levels.map(l => l.count);
+    
+    new Chart(levelsCtx, {
+      type: 'doughnut',
+      data: {
+        labels: levelLabels,
+        datasets: [{
+          data: levelCounts,
+          backgroundColor: [
+            '#0d6efd',
+            '#198754', 
+            '#ffc107',
+            '#dc3545',
+            '#6f42c1',
+            '#fd7e14',
+            '#20c997'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 11
+              }
+            }
+          }
+        }
+      }
+    });
+  })
+  .catch(error => {
+    console.error('Error loading chart data:', error);
+  });
+</script> 
